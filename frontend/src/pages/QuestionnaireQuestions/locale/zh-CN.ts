@@ -1,6 +1,6 @@
 export default {
   language: 'zh-CN',
-  namespace: 'questionnaireEdit',
+  namespace: 'questionnaireQuestions',
   resources: {
     back: '问卷管理',
     outline: '问卷大纲',

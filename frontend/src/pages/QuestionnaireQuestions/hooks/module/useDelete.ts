@@ -8,7 +8,7 @@ import usePage from '../../models/usePage';
 export default () => {
   const { onRefresh } = useDetail.getState();
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   const { message } = App.useApp();
 

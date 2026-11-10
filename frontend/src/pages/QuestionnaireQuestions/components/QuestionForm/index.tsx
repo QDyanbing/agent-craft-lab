@@ -25,7 +25,7 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
   const [form] = Form.useForm<FormValues>();
   const type = Form.useWatch('type', form)?.value ?? question?.type ?? 'single';
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   const loading = creating || modifying;
   const hasOptions = type === 'single' || type === 'multiple';

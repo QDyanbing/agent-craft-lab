@@ -28,7 +28,7 @@ export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
   const hash = useLocation({ select: (location) => location.hash });
   const screens = Grid.useBreakpoint();
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   const moduleUuid = hash
     ? survey.modules.find(

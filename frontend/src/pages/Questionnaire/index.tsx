@@ -96,7 +96,7 @@ export default () => {
           <Button
             type="link"
             className={styles.action}
-            onClick={() => onHistoryChange('/questionnaires/edit', { uuid })}
+            onClick={() => onHistoryChange('/questionnaires/questions', { uuid })}
           >
             {t('editQuestions')}
           </Button>

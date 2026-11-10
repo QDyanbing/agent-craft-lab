@@ -13,7 +13,7 @@ export default ({ module }: { module?: API.QuestionnaireModule }) => {
 
   const [form] = Form.useForm<API.QuestionnaireModuleSetParams>();
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   const loading = creating || modifying;
 

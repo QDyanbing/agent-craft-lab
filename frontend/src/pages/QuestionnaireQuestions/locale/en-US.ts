@@ -1,6 +1,6 @@
 export default {
   language: 'en-US',
-  namespace: 'questionnaireEdit',
+  namespace: 'questionnaireQuestions',
   resources: {
     back: 'Questionnaires',
     outline: 'Questionnaire outline',

@@ -97,6 +97,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   const result: API.SuccessResult<API.QuestionnaireCreated> = await response.json();
   expect(result.success).toBe(true);
   created.add(result.data.uuid);
+  await expect(page).toHaveURL(`/questionnaires/questions?uuid=${result.data.uuid}`);
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByText('尚未添加模块')).toBeVisible();
 
@@ -155,6 +156,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   await page.setViewportSize({ width: 840, height: 380 });
   const saved = new URL(page.url());
   await page.goto(`/Questionnaires/Edit${saved.search}${saved.hash}`);
+  await expect(page).toHaveURL(`/questionnaires/questions${saved.search}${saved.hash}`);
   await expect(lastQuestion).toBeInViewport();
   await expect(outline.getByRole('heading')).toBeInViewport();
   const basics = page.getByRole('region', { name: '基本信息', exact: true });

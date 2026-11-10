@@ -17,7 +17,7 @@ interface Props {
 export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion }: Props) => {
   const { onOpen } = useEditor.getState();
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   return (
     <Flex vertical component="section" aria-label={module.name} className={styles.moduleSection}>

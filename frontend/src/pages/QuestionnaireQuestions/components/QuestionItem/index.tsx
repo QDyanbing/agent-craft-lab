@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default ({ question, number, selected, onEdit, onDelete }: Props) => {
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   return (
     <Flex

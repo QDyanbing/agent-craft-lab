@@ -27,7 +27,7 @@ declare global {
         children?: RouteConfig[];
         component?: never;
         path: string;
-        redirect: string;
+        redirect: { to: string; search?: true; hash?: true };
       }
     | {
         children: RouteConfig[];

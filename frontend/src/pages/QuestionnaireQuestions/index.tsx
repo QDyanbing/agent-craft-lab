@@ -19,7 +19,7 @@ export default () => {
 
   const [{ uuid }] = useUrlState<{ uuid: string }>();
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   const isLoading = loading || uuid !== currentUuid;
 
@@ -32,7 +32,7 @@ export default () => {
   return (
     <Spin
       spinning={isLoading || deletingModule || deletingQuestion}
-      classNames={{ root: styles.questionnaireEdit, container: styles.container }}
+      classNames={{ root: styles.questionnaireQuestions, container: styles.container }}
     >
       {data && data.uuid === uuid ? (
         <Editor

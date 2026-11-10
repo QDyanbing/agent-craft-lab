@@ -17,7 +17,7 @@ function createRoutes(parentRoute: AnyRoute, routeConfigs: readonly RouteConfig[
       component: routeConfig.component ? lazyRouteComponent(routeConfig.component) : undefined,
       beforeLoad: routeConfig.redirect
         ? () => {
-            throw redirect({ to: routeConfig.redirect });
+            throw redirect(routeConfig.redirect);
           }
         : undefined,
     };

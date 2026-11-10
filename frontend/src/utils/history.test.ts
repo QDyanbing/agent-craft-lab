@@ -28,11 +28,11 @@ describe('页面跳转', () => {
   test('新增或替换浏览器历史记录', () => {
     const search = { uuid: 'questionnaire-id' };
 
-    onHistoryChange('/questionnaires/edit', search);
+    onHistoryChange('/questionnaires/questions', search);
     onHistoryReplace('/questionnaires');
 
     expect(mocks.navigate).toHaveBeenNthCalledWith(1, {
-      to: '/questionnaires/edit',
+      to: '/questionnaires/questions',
       search,
     });
     expect(mocks.navigate).toHaveBeenNthCalledWith(2, {
@@ -61,10 +61,10 @@ describe('页面跳转', () => {
   });
 
   test('在新标签页打开页面', () => {
-    onOpenTab('/questionnaires/edit?uuid=questionnaire-id');
+    onOpenTab('/questionnaires/questions?uuid=questionnaire-id');
 
     expect(mocks.open).toHaveBeenCalledWith(
-      '/questionnaires/edit?uuid=questionnaire-id',
+      '/questionnaires/questions?uuid=questionnaire-id',
       '_blank',
       'noopener,noreferrer',
     );

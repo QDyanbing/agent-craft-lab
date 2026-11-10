@@ -17,7 +17,7 @@ export default () => {
     if (!result || !usePage.getState().ready) return;
 
     message.success(t('created'));
-    onHistoryChange('/questionnaires/edit', { uuid: result.data.uuid });
+    onHistoryChange('/questionnaires/questions', { uuid: result.data.uuid });
   });
 
   return { loading, onCreate };

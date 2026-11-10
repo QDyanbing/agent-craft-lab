@@ -18,7 +18,7 @@ export default ({ modules, selectedUuid, onSelect }: Props) => {
   const collapsedModuleUuids = useEditor((state) => state.collapsedModuleUuids);
   const { onOpen, onModuleExpandChange } = useEditor.getState();
 
-  const { t } = useTranslation('questionnaireEdit');
+  const { t } = useTranslation('questionnaireQuestions');
 
   const nodes = modules.map((module, index) => ({
     key: module.uuid,

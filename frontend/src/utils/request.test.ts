@@ -168,12 +168,12 @@ describe('统一请求', () => {
 
   test('业务重定向错误执行页面替换', async () => {
     fetchMock.mockResolvedValue(
-      response({ success: false, errorCode: '302', data: '/questionnaires/edit?uuid=test' }),
+      response({ success: false, errorCode: '302', data: '/questionnaires/questions?uuid=test' }),
     );
 
     await Request.get('/api/test');
 
-    expect(mocks.onHistoryReplace).toHaveBeenCalledWith('/questionnaires/edit?uuid=test');
+    expect(mocks.onHistoryReplace).toHaveBeenCalledWith('/questionnaires/questions?uuid=test');
   });
 
   test('业务警告和系统错误使用对应兜底文案', async () => {
