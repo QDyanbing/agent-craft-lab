@@ -44,3 +44,15 @@ export const onHistoryBack = (defaultPath: string) => {
 export const onOpenTab = (path: string) => {
   window.open(path, '_blank', 'noopener,noreferrer');
 };
+
+/** 更新当前页的正文锚点，同时保留查询参数和历史位置。 */
+export const onHistoryAnchorChange = (hash: string) => {
+  router.navigate({
+    to: '.',
+    search: true,
+    hash,
+    replace: true,
+    resetScroll: false,
+    hashScrollIntoView: false,
+  });
+};

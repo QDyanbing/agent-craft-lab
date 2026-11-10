@@ -1,0 +1,20 @@
+.outline {
+  flex: none;
+  width: var(--questionnaire-module-width);
+  min-height: 0;
+  max-width: 100%;
+  border-inline-end: var(--ant-line-width) solid var(--ant-color-border-secondary);
+
+  .header {
+    flex-shrink: 0;
+    padding: var(--ant-padding-xs) var(--ant-padding);
+    border-bottom: var(--ant-line-width) solid var(--ant-color-border-secondary);
+  }
+
+  .body {
+    min-height: 0;
+    padding: var(--ant-padding-sm) var(--ant-padding-xs);
+    overflow: auto;
+    overflow-wrap: anywhere;
+  }
+}
