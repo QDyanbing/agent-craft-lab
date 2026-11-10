@@ -14,5 +14,11 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 8000,
+    proxy:
+      mode === 'mock'
+        ? undefined
+        : {
+            '/api/questionnaires': process.env.QUESTIONNAIRE_API_TARGET ?? 'http://127.0.0.1:3000',
+          },
   },
 }));
