@@ -49,35 +49,35 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Build production image
-        run: docker build --tag react-project-template:ci .
+        run: docker build --tag craftlab-frontend:ci .
       - name: Start test backend
         run: |
           mkdir -p "$RUNNER_TEMP/container-api-v1/api" "$RUNNER_TEMP/container-api-v2/api"
           printf 'proxy-ok\n' > "$RUNNER_TEMP/container-api-v1/api/test"
           printf 'proxy-recovered\n' > "$RUNNER_TEMP/container-api-v2/api/test"
-          docker network create --subnet 172.28.0.0/24 react-project-template-ci
+          docker network create --subnet 172.28.0.0/24 craftlab-frontend-ci
           docker run --detach \
-            --name react-project-template-api \
-            --network react-project-template-ci \
+            --name craftlab-frontend-api \
+            --network craftlab-frontend-ci \
             --volume "$RUNNER_TEMP/container-api-v1:/usr/share/nginx/html:ro" \
             nginx:1.30.4-alpine3.24
 
           for attempt in {1..10}; do
-            if docker exec react-project-template-api wget --quiet --spider http://127.0.0.1/api/test; then
+            if docker exec craftlab-frontend-api wget --quiet --spider http://127.0.0.1/api/test; then
               break
             fi
             sleep 1
           done
 
-          docker exec react-project-template-api wget --quiet --spider http://127.0.0.1/api/test
+          docker exec craftlab-frontend-api wget --quiet --spider http://127.0.0.1/api/test
       - name: Start production container
         run: |
           docker run --detach \
-            --name react-project-template-ci \
-            --network react-project-template-ci \
+            --name craftlab-frontend-ci \
+            --network craftlab-frontend-ci \
             --publish 8080:80 \
-            --env API_UPSTREAM=http://react-project-template-api \
-            react-project-template:ci
+            --env API_UPSTREAM=http://craftlab-frontend-api \
+            craftlab-frontend:ci
       - name: Verify production container
         run: |
           for attempt in {1..10}; do
@@ -88,10 +88,10 @@ jobs:
           done
 
           curl --fail --silent --show-error http://127.0.0.1:8080/healthz
-          curl --fail --silent --show-error http://127.0.0.1:8080/roles | grep --fixed-strings '<div id="root"></div>'
+          curl --fail --silent --show-error http://127.0.0.1:8080/questionnaires/questions | grep --fixed-strings '<div id="root"></div>'
           curl --silent --show-error --head http://127.0.0.1:8080/index.html | grep --ignore-case 'Cache-Control: no-cache'
 
-          asset_path=$(docker exec react-project-template-ci sh -c 'find /usr/share/nginx/html/assets -type f | head -n 1')
+          asset_path=$(docker exec craftlab-frontend-ci sh -c 'find /usr/share/nginx/html/assets -type f | head -n 1')
           asset_path=${asset_path#/usr/share/nginx/html}
           curl --silent --show-error --head "http://127.0.0.1:8080${asset_path}" | grep --ignore-case 'Cache-Control: public, max-age=31536000, immutable'
 
@@ -99,21 +99,21 @@ jobs:
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/missing)" = 404
       - name: Verify backend DNS refresh
         run: |
-          old_backend_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' react-project-template-api)
-          docker rm --force react-project-template-api
+          old_backend_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' craftlab-frontend-api)
+          docker rm --force craftlab-frontend-api
           docker run --detach \
-            --name react-project-template-api-old-ip \
-            --network react-project-template-ci \
+            --name craftlab-frontend-api-old-ip \
+            --network craftlab-frontend-ci \
             --ip "$old_backend_ip" \
             --volume "$RUNNER_TEMP/container-api-v1:/usr/share/nginx/html:ro" \
             nginx:1.30.4-alpine3.24
           docker run --detach \
-            --name react-project-template-api \
-            --network react-project-template-ci \
+            --name craftlab-frontend-api \
+            --network craftlab-frontend-ci \
             --volume "$RUNNER_TEMP/container-api-v2:/usr/share/nginx/html:ro" \
             nginx:1.30.4-alpine3.24
 
-          new_backend_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' react-project-template-api)
+          new_backend_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' craftlab-frontend-api)
           test "$new_backend_ip" != "$old_backend_ip"
 
           for attempt in {1..20}; do
@@ -127,14 +127,14 @@ jobs:
       - if: failure()
         name: Print container logs
         run: |
-          docker logs react-project-template-api || true
-          docker logs react-project-template-api-old-ip || true
-          docker logs react-project-template-ci || true
+          docker logs craftlab-frontend-api || true
+          docker logs craftlab-frontend-api-old-ip || true
+          docker logs craftlab-frontend-ci || true
       - if: always()
         name: Remove test containers
         run: |
-          docker rm --force react-project-template-api react-project-template-api-old-ip react-project-template-ci 2>/dev/null || true
-          docker network rm react-project-template-ci 2>/dev/null || true
+          docker rm --force craftlab-frontend-api craftlab-frontend-api-old-ip craftlab-frontend-ci 2>/dev/null || true
+          docker network rm craftlab-frontend-ci 2>/dev/null || true
 
   e2e:
     runs-on: ubuntu-latest

@@ -2,7 +2,7 @@
 
 ## 目标与边界
 
-本项目是由 Vite 构建的浏览器端单页应用。生产部署只需要提供静态资源托管、前端路由回退和 API 转发，不需要常驻 Node.js 应用服务。
+Vite 构建问卷前端，Nginx 托管静态资源并将 `/api` 请求转发给 Node.js 后端。后端通过 SQLite 保存问卷和答卷。
 
 部署方案需要满足：
 
@@ -12,8 +12,6 @@
 - 支持将 `/api` 转发到真实后端，默认采用前后端同域部署。
 - 产物能够部署到普通服务器、容器平台或静态托管平台，不绑定具体云厂商。
 - 环境配置只包含可以公开给浏览器的值，不在前端产物中保存任何秘密。
-
-本次不引入 SSR、Node.js 生产服务、运行时环境变量注入平台或云厂商专用部署能力。
 
 ## 方案对比
 
@@ -93,20 +91,19 @@ ut run dev:mock
 ```json
 {
   "success": false,
-  "errorCode": "400",
-  "errorType": "WARNING",
-  "errorMessage": "请求未完成"
+  "errorKey": "questionnaire:errors.duplicateName",
+  "errorMessage": "问卷名称已存在，请换一个名称"
 }
 ```
 
-HTTP 401 可以在 `data` 中返回登录地址。请求层会清理本地登录状态，并跳转到该地址；未返回地址时使用项目默认登录页。
+问卷重名时后端返回 HTTP 409 和以上响应，前端保留已填内容并在名称字段提示错误。
 
 ## 构建产物
 
 默认镜像可以直接构建：
 
 ```bash
-docker build --tag react-project-template:local .
+docker build --tag craftlab-frontend:local .
 ```
 
 同域部署不需要传入前端 API 地址。运行时通过 `API_UPSTREAM` 指向后端服务，值必须是包含协议和端口、末尾不带 `/` 的服务 Origin，不追加 `/api` 路径。
@@ -117,8 +114,8 @@ docker build --tag react-project-template:local .
 docker run --rm \
   --network application-network \
   --publish 8080:80 \
-  --env API_UPSTREAM=http://backend-service:8080 \
-  react-project-template:local
+  --env API_UPSTREAM=http://backend-service:3000 \
+  craftlab-frontend:local
 ```
 
 Nginx 会保留浏览器请求中的 `/api/...` 路径并转发到该服务，并通过容器的本地 DNS 重新解析服务名；后端容器以相同服务名重建后不需要同步重启前端容器。容器没有显式配置 `API_UPSTREAM` 时默认指向 `http://127.0.0.1:3000`，容器可以独立启动，但 API 请求会在没有同容器后端时返回 502；实际部署应显式设置真实地址。
@@ -128,7 +125,7 @@ Nginx 会保留浏览器请求中的 `/api/...` 路径并转发到该服务，�
 ```bash
 docker build \
   --build-arg VITE_API_BASE_URL=https://api.example.com \
-  --tag react-project-template:local .
+  --tag craftlab-frontend:local .
 ```
 
 这时浏览器会直接请求配置的后端地址，不经过镜像内的 `/api` 代理。
@@ -218,7 +215,7 @@ server {
 3. 执行 `ut run release`，在 `artifacts/<Tag>/` 生成静态资源压缩包、Nginx 镜像归档、发布清单和 SHA-256 校验文件。
 4. 将静态资源发布到目标静态托管环境，或者使用 `docker load --input <镜像归档>` 导入 Nginx 镜像后再上传到项目选定的镜像仓库。
 5. 部署产物并检查静态页面、前端路由和 API 健康状态。
-6. 对登录、退出、权限拦截、用户管理、角色管理和个人中心执行冒烟验证。
+6. 用一份测试问卷走通创建、改题、填写和提交答卷的流程。
 7. 验证失败时回滚到上一不可变产物，不覆盖旧版本文件或镜像标签。
 
 首次执行发布流程前，安装 Playwright Chromium，并确认 Tar、Docker CLI、Docker Buildx 和 Docker daemon 可用：
@@ -232,7 +229,7 @@ tar --version
 
 ## 验收标准
 
-- 直接打开和刷新登录页、角色页、用户页及个人中心不会返回 Nginx 404。
+- 直接打开和刷新问卷列表、改题页和答题页均能加载。改题页和答题页使用测试问卷的有效 `uuid`。
 - `/assets` 返回长期缓存响应头，`index.html` 不使用长期强缓存。
 - 同域 `/api` 能够访问真实后端，后端 401、403、404 和 500 不会回退到 `index.html`。
 - 生产镜像内不包含 Node.js、源码、`node_modules`、本地环境变量和测试报告。
