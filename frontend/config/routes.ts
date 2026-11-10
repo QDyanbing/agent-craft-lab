@@ -1,7 +1,15 @@
 export const router = [
   {
     path: '/',
-    redirect: '/roles',
+    redirect: '/questionnaires',
+  },
+  {
+    component: () => import('@/layouts/questionnaires'),
+    children: [
+      { path: '/questionnaires', component: () => import('@/pages/Questionnaire') },
+      { path: '/questionnaires/answer', component: () => import('@/pages/QuestionnaireAnswer') },
+      { path: '/questionnaires/edit', component: () => import('@/pages/QuestionnaireEdit') },
+    ],
   },
   {
     component: () => import('@/layouts/root'),

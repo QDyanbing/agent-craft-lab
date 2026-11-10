@@ -2,6 +2,10 @@ export default {
   language: 'en-US',
   namespace: 'layout',
   resources: {
+    questionnaireBrand: 'CraftLab',
+    mainNavigation: 'Main navigation',
+    questionnaireList: 'Questionnaire list',
+    questionnaires: 'Questionnaires',
     brand: 'React Project Template',
     userManagement: 'Users',
     roleManagement: 'Roles',

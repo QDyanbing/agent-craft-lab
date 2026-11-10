@@ -5,8 +5,8 @@ test.describe('公共布局', () => {
     await page.goto('/profile');
     await page.getByRole('button', { name: 'React 项目模板' }).click();
 
-    await expect(page).toHaveURL('/roles');
-    await expect(page.getByPlaceholder('请输入角色名称')).toBeVisible();
+    await expect(page).toHaveURL('/questionnaires');
+    await expect(page.getByRole('heading', { name: '问卷管理' })).toBeVisible();
   });
 
   test('Case 5.2：账号菜单可以进入个人中心和修改密码页面', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('基础状态页面', () => {
 
     await page.getByRole('button', { name: '返回首页' }).click();
 
-    await expect(page).toHaveURL('/roles');
+    await expect(page).toHaveURL('/questionnaires');
   });
 
   test('Case 5.6：403 页面说明权限不足并可返回首页', async ({ page }) => {
@@ -77,7 +77,7 @@ test.describe('基础状态页面', () => {
 
     await page.getByRole('button', { name: '返回首页' }).click();
 
-    await expect(page).toHaveURL('/roles');
+    await expect(page).toHaveURL('/questionnaires');
   });
 
   test('Case 5.11：500 页面说明异常并可返回首页', async ({ page }) => {
@@ -87,6 +87,6 @@ test.describe('基础状态页面', () => {
     await expect(page.getByText('页面暂时无法正常显示，请返回首页后重试。')).toBeVisible();
     await page.getByRole('button', { name: '返回首页' }).click();
 
-    await expect(page).toHaveURL('/roles');
+    await expect(page).toHaveURL('/questionnaires');
   });
 });

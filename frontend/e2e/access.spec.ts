@@ -18,6 +18,8 @@ test.describe('菜单、按钮和路由权限', () => {
       roleUuids: [role.uuid],
     });
     await loginSession(page, { account: user.account, password });
+    await page.waitForURL('/questionnaires');
+    await page.goto('/roles');
 
     await expect(page).toHaveURL('/roles');
     await expect(page.getByRole('menuitem', { name: '角色管理' })).toBeVisible();
@@ -52,6 +54,8 @@ test.describe('菜单、按钮和路由权限', () => {
       roleUuids: [role.uuid],
     });
     await loginSession(page, { account: user.account, password });
+    await page.waitForURL('/questionnaires');
+    await page.goto('/roles');
 
     await expect(page).toHaveURL('/403');
 

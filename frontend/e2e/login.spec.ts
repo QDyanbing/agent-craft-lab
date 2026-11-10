@@ -51,8 +51,8 @@ test.describe('登录成功', () => {
     expect(result.success).toBeTruthy();
     await registerSession(result.data.token);
 
-    await expect(page).toHaveURL('/roles');
-    await expect(page.getByRole('menuitem', { name: '角色管理' })).toBeVisible();
+    await expect(page).toHaveURL('/questionnaires');
+    await expect(page.getByRole('heading', { name: '问卷管理' })).toBeVisible();
   });
 });
 
@@ -189,8 +189,8 @@ test.describe('独立未登录会话', () => {
     await registerSession(result.data.token);
 
     await rootPromise;
-    await expect(page).toHaveURL('/roles');
-    await expect(page.getByRole('menuitem', { name: '角色管理' })).toBeVisible();
+    await expect(page).toHaveURL('/questionnaires');
+    await expect(page.getByRole('heading', { name: '问卷管理' })).toBeVisible();
   });
 
   test('Case 1.9：无效 Token 触发登录失效处理', async ({ page }) => {
@@ -212,7 +212,9 @@ test.describe('独立未登录会话', () => {
     expect(result.success).toBeTruthy();
     expect(result.data.token).not.toBe('');
     await registerSession(result.data.token);
-    await expect(page).toHaveURL('/roles');
+    await expect(page).toHaveURL('/questionnaires');
+    await page.getByRole('button', { name: '个人中心' }).click();
+    await expect(page).toHaveURL('/profile');
 
     await page.getByRole('button', { name: '管理员' }).click();
 

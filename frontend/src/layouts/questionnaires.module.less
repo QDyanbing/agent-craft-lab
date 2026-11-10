@@ -1,0 +1,63 @@
+.questionnaires {
+  height: 100%;
+  overflow: auto;
+  background: var(--ant-color-bg-layout);
+  scrollbar-gutter: stable;
+
+  .header {
+    flex-shrink: 0;
+    border-bottom: var(--ant-line-width) solid var(--ant-color-border-secondary);
+    background: var(--ant-color-bg-container);
+  }
+
+  .navigation,
+  .content {
+    padding-inline: clamp(var(--ant-padding), 4vw, var(--ant-padding-xl));
+  }
+
+  .navigation {
+    width: 100%;
+    min-height: var(--ant-control-height-lg);
+    padding-block: var(--ant-padding-sm);
+  }
+
+  .brand {
+    height: auto;
+    padding: 0;
+    font-size: var(--ant-font-size-heading-4);
+    font-weight: var(--ant-font-weight-strong);
+    letter-spacing: var(--questionnaire-brand-tracking);
+  }
+
+  .mark {
+    background: var(--ant-color-primary);
+    color: var(--ant-color-white);
+  }
+
+  .body {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .menu {
+    flex: 1;
+    min-width: var(--questionnaire-nav-width);
+  }
+
+  .content {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: var(--questionnaire-content-width);
+    margin-inline: auto;
+    padding-block: clamp(var(--ant-padding), 3vw, var(--ant-padding-xl));
+    overflow: auto;
+
+    &[data-page='/questionnaires'],
+    &[data-page='/questionnaires/edit'] {
+      max-width: none;
+      padding: var(--ant-padding);
+    }
+  }
+}

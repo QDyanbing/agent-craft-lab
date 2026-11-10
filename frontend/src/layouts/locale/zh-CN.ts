@@ -2,6 +2,10 @@ export default {
   language: 'zh-CN',
   namespace: 'layout',
   resources: {
+    questionnaireBrand: 'CraftLab',
+    mainNavigation: '主导航',
+    questionnaireList: '问卷列表',
+    questionnaires: '问卷管理',
     brand: 'React 项目模板',
     userManagement: '用户管理',
     roleManagement: '角色管理',

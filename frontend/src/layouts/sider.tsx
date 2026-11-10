@@ -3,6 +3,7 @@ import { hasPermission } from '@/utils/access';
 import { onHistoryChange } from '@/utils/history';
 import { getStorage, setStorage } from '@/utils/storage';
 import {
+  FormOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SafetyCertificateOutlined,
@@ -29,6 +30,12 @@ export default () => {
   );
 
   const items = [
+    {
+      key: '/questionnaires',
+      icon: <FormOutlined />,
+      label: t('questionnaires'),
+      requiredPermissions: [],
+    },
     {
       key: '/roles',
       icon: <SafetyCertificateOutlined />,

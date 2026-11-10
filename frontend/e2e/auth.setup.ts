@@ -17,7 +17,7 @@ setup('保存管理员认证状态', async ({ page }) => {
   await registerSession(result.data.token);
   await clearUsers(page.request, result.data.token);
   await clearRoles(page.request, result.data.token);
-  await page.waitForURL('/roles');
+  await page.waitForURL('/questionnaires');
 
   await page.context().storageState({ path: AUTH_FILE });
 });
