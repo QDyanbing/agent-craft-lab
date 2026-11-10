@@ -5,6 +5,7 @@ import { deleteToken, getToken } from '@/utils/token';
 
 type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   skipErrorHandler?: boolean;
+  localErrorKeys?: readonly string[];
 };
 
 type RequestErrorOptions = {
@@ -31,7 +32,19 @@ export class RequestError extends Error {
   }
 }
 
+function getErrorKey(data: unknown) {
+  return typeof data === 'object' &&
+    data !== null &&
+    'errorKey' in data &&
+    typeof data.errorKey === 'string'
+    ? data.errorKey
+    : undefined;
+}
+
 function getResponseMessage(data: unknown) {
+  const key = getErrorKey(data);
+  if (key && i18n.exists(key)) return i18n.t(key);
+
   if (
     typeof data === 'object' &&
     data !== null &&
@@ -221,7 +234,7 @@ async function send<TData, TResult>(
   data?: TData,
   options: RequestOptions = {},
 ): Promise<API.SuccessResult<TResult> | undefined> {
-  const { skipErrorHandler = false, ...init } = options;
+  const { skipErrorHandler = false, localErrorKeys, ...init } = options;
   const headers = new Headers(init.headers);
   const token = getToken();
   let requestUrl = `${import.meta.env.VITE_API_BASE_URL ?? ''}${url}`;
@@ -290,12 +303,10 @@ async function send<TData, TResult>(
       requestError = new RequestError(content, { cause: error });
     }
 
-    if (!skipErrorHandler) {
-      handleGlobalError(requestError);
-      return undefined;
-    }
-
-    throw requestError;
+    const key = getErrorKey(requestError.data);
+    if (skipErrorHandler || (key && localErrorKeys?.includes(key))) throw requestError;
+    handleGlobalError(requestError);
+    return undefined;
   }
 }
 

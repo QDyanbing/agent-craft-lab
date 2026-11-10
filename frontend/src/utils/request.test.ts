@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/i18n', () => ({
   default: {
+    exists: () => false,
     t: (key: string, options?: { status?: number }) =>
       options?.status === undefined ? key : `${key}:${options.status}`,
   },
@@ -45,6 +46,27 @@ describe('统一请求', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  test('字段错误交给表单，其他错误仍走全局提示', async () => {
+    const options = { localErrorKeys: ['questionnaire:errors.duplicateName'] };
+    fetchMock.mockResolvedValueOnce(
+      response(
+        { success: false, errorKey: options.localErrorKeys[0], errorMessage: '名称已存在' },
+        409,
+      ),
+    );
+    await expect(Request.post('/api/test', {}, options)).rejects.toMatchObject({
+      status: 409,
+      message: '名称已存在',
+    });
+    expect(mocks.emitMessage).not.toHaveBeenCalled();
+
+    fetchMock.mockResolvedValueOnce(
+      response({ success: false, errorKey: 'other', errorMessage: '保存失败' }, 409),
+    );
+    await expect(Request.post('/api/test', {}, options)).resolves.toBeUndefined();
+    expect(mocks.emitMessage).toHaveBeenCalledWith('error', '保存失败');
   });
 
   test('GET 请求组装查询参数、Hash 和登录凭证', async () => {
