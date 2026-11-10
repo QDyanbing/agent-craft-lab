@@ -2,7 +2,6 @@ export default {
   language: 'zh-CN',
   namespace: 'questionnaireQuestions',
   resources: {
-    back: '问卷管理',
     outline: '问卷大纲',
     newModule: '新增模块',
     editModule: '编辑模块',
@@ -33,8 +32,6 @@ export default {
     textAnswerPlaceholder: '请输入回答',
     number: '数字',
     save: '保存',
-    retry: '重试',
-    unavailable: '无法加载这份问卷',
     numberedTitle: '{{number}} {{title}}',
     saved: '已保存',
     deleted: '已删除',

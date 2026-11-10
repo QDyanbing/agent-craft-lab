@@ -15,8 +15,7 @@ const revealSelectedRow = (title: HTMLElement | null) => {
 };
 
 export default ({ modules, selectedUuid, onSelect }: Props) => {
-  const collapsedModuleUuids = useEditor((state) => state.collapsedModuleUuids);
-  const { onOpen, onModuleExpandChange } = useEditor.getState();
+  const { collapsedModuleUuids, onOpen, onModuleExpandChange } = useEditor();
 
   const { t } = useTranslation('questionnaireQuestions');
 

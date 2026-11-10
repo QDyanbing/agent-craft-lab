@@ -24,8 +24,8 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
       aria-label={question.title}
       className={styles.questionItem}
     >
-      <Flex align="start" justify="space-between" gap="small">
-        <Flex wrap align="center" gap="small" className={styles.content}>
+      <Flex gap="small" align="start" justify="space-between">
+        <Flex wrap gap="small" align="center" className={styles.content}>
           <Typography.Text strong className={styles.title}>
             {t('numberedTitle', { number, title: question.title })}
           </Typography.Text>
@@ -70,9 +70,9 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
         <Flex vertical gap="small" component="ul" className={styles.options}>
           {question.options.map((option, index) => (
             <Flex
-              key={index}
-              component="li"
               gap="small"
+              component="li"
+              key={index}
               data-type={question.type}
               className={styles.option}
             >

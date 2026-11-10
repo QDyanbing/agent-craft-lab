@@ -1,9 +1,9 @@
+import useRequestAction from '@/hooks/useRequestAction';
 import { setCreate } from '@/services/questionnaire';
 import { onHistoryChange } from '@/utils/history';
-import { useLockFn, useRequest } from 'ahooks';
+import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
-import usePage from '../models/usePage';
 
 export default () => {
   const { t } = useTranslation('questionnaire');
@@ -12,11 +12,11 @@ export default () => {
 
   const { loading, runAsync } = useRequest(setCreate, { manual: true });
 
-  const onCreate = useLockFn(async (params: API.QuestionnaireSetParams) => {
+  const onCreate = useRequestAction(async (params: API.QuestionnaireSetParams) => {
     const result = await runAsync(params);
-    if (!result || !usePage.getState().ready) return;
+    if (!result) return;
 
-    message.success(t('created'));
+    message.success(t('message.createSuccess'));
     onHistoryChange('/questionnaires/questions', { uuid: result.data.uuid });
   });
 

@@ -1,5 +1,6 @@
+import useRequestAction from '@/hooks/useRequestAction';
 import { setModuleModify } from '@/services/questionnaire';
-import { useLockFn, useRequest } from 'ahooks';
+import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import useDetail from '../../models/useDetail';
@@ -16,7 +17,7 @@ export default () => {
 
   const { loading, runAsync } = useRequest(setModuleModify, { manual: true });
 
-  const onModify = useLockFn(async (params: API.QuestionnaireModuleSetParams) => {
+  const onModify = useRequestAction(async (params: API.QuestionnaireModuleSetParams) => {
     const { uuid } = usePage.getState();
     const { dialog } = useEditor.getState();
     if (!uuid || dialog?.kind !== 'module' || !dialog.moduleUuid) return;

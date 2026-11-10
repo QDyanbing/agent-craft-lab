@@ -9,8 +9,14 @@ interface Store {
 
 export default create<Store>((set) => {
   const dialog = undefined;
-  const onOpen = (survey?: API.QuestionnaireSummary) => set({ dialog: { survey } });
-  const onClose = () => set({ dialog });
+
+  const onOpen = (survey?: API.QuestionnaireSummary) => {
+    set({ dialog: { survey } });
+  };
+
+  const onClose = () => {
+    set({ dialog });
+  };
 
   usePage.subscribe(({ ready }) => {
     if (!ready) onClose();

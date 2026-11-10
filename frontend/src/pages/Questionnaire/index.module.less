@@ -13,6 +13,46 @@
   .list {
     flex: 1;
     min-height: 0;
+
+    .cover {
+      position: relative;
+      isolation: isolate;
+      min-height: var(--questionnaire-cover-height);
+      padding: var(--ant-padding-sm) var(--ant-padding);
+      overflow: hidden;
+      border-radius: var(--ant-border-radius-lg);
+      background: var(--questionnaire-cover-bg);
+
+      &::before {
+        position: absolute;
+        inset: 0 0 0 auto;
+        z-index: -1;
+        width: min(53%, calc(var(--questionnaire-cover-height) * 1.5));
+        background: url('../../assets/questionnaire-cover.webp') right center / cover no-repeat;
+        mask-image: linear-gradient(to right, transparent, black 28%);
+        content: '';
+      }
+    }
+
+    .intro {
+      max-width: 56%;
+    }
+
+    &:lang(en) .intro {
+      max-width: 100%;
+    }
+
+    .cover:lang(en)::before {
+      width: min(42%, calc(var(--questionnaire-cover-height) * 1.5));
+      mask-image: linear-gradient(to right, transparent, black 70%);
+    }
+
+    .title {
+      overflow-wrap: anywhere;
+      hyphens: auto;
+      font-size: var(--ant-font-size-heading-3);
+      line-height: var(--ant-line-height-heading-3);
+    }
   }
 
   .body {
@@ -20,10 +60,6 @@
     min-width: 0;
     min-height: 0;
     container-type: size;
-
-    &[data-error='true'] {
-      overflow: auto;
-    }
   }
 
   .tableSection {
@@ -31,9 +67,11 @@
     grid-template-rows: max-content minmax(0, 1fr);
     max-height: 100cqh;
     overflow: clip;
-    border: var(--ant-line-width) solid var(--ant-color-border-secondary);
-    border-radius: var(--ant-border-radius-lg);
     background: var(--ant-color-bg-container);
+
+    .tableRow {
+      height: calc(var(--ant-control-height) + 2 * var(--ant-table-cell-padding-block));
+    }
   }
 
   .file,

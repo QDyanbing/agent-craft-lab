@@ -12,7 +12,9 @@ interface Props {
 
 export default ({ survey, loading, onFinish }: Props) => {
   const { onClose } = useDialog.getState();
+
   const [form] = Form.useForm<API.QuestionnaireSetParams>();
+
   const { t } = useTranslation('questionnaire');
 
   const onSave = async (values: API.QuestionnaireSetParams) => {
@@ -32,23 +34,23 @@ export default ({ survey, loading, onFinish }: Props) => {
   return (
     <Modal
       open
-      title={t(survey ? 'editSurvey' : 'create')}
       confirmLoading={loading}
-      okText={t(survey ? 'save' : 'submit')}
+      title={t(survey ? 'form.editTitle' : 'action.create')}
+      okText={t(survey ? 'form.save' : 'form.submit')}
+      onOk={() => form.submit()}
       onCancel={() => {
         if (!loading) onClose();
       }}
-      onOk={() => form.submit()}
     >
       <Form layout="vertical" form={form} disabled={loading} onFinish={onSave}>
         <Form.Item
           name="name"
-          label={t('name')}
-          rules={[{ required: true, whitespace: true, message: t('nameRequired') }]}
+          label={t('column.name')}
+          rules={[{ required: true, whitespace: true, message: t('form.nameRequired') }]}
         >
           <Input autoFocus />
         </Form.Item>
-        <Form.Item name="description" label={t('description')}>
+        <Form.Item name="description" label={t('column.description')}>
           <Input.TextArea rows={3} />
         </Form.Item>
       </Form>

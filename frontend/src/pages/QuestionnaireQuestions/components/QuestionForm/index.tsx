@@ -23,11 +23,12 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
   const { loading: modifying, onModify } = useModify();
 
   const [form] = Form.useForm<FormValues>();
-  const type = Form.useWatch('type', form)?.value ?? question?.type ?? 'single';
+  const selectedType = Form.useWatch('type', form);
 
   const { t } = useTranslation('questionnaireQuestions');
 
   const loading = creating || modifying;
+  const type = selectedType?.value ?? question?.type ?? 'single';
   const hasOptions = type === 'single' || type === 'multiple';
 
   const onFinish = ({ type: { value }, title, description, options }: FormValues) => {
@@ -35,6 +36,7 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
       value === 'single' || value === 'multiple'
         ? { type: value, title, description, options: options ?? [] }
         : { type: value, title, description };
+
     return question ? onModify(params) : onCreate(params);
   };
 
@@ -54,8 +56,8 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
   return (
     <Modal
       open
-      title={t(question ? 'editQuestion' : 'newQuestion')}
       confirmLoading={loading}
+      title={t(question ? 'editQuestion' : 'newQuestion')}
       okText={t('save')}
       onOk={() => form.submit()}
       onCancel={() => {
@@ -65,8 +67,8 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
       <Form
         layout="vertical"
         form={form}
-        disabled={loading}
         initialValues={{ type: { value: 'single', label: t('single') }, options: ['', ''] }}
+        disabled={loading}
         onFinish={onFinish}
       >
         <Form.Item name="type" label={t('type')} rules={[{ required: true }]}>
@@ -101,7 +103,7 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
               {(fields, { add, remove }, { errors }) => (
                 <Flex vertical gap="small">
                   {fields.map(({ key, name }, index) => (
-                    <Flex key={key} gap="small" align="baseline">
+                    <Flex gap="small" align="baseline" key={key}>
                       <Flex vertical flex={1}>
                         <Form.Item
                           noStyle

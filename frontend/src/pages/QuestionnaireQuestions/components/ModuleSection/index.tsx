@@ -23,9 +23,9 @@ export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion
     <Flex vertical component="section" aria-label={module.name} className={styles.moduleSection}>
       <Flex
         wrap
+        gap="small"
         align="center"
         justify="space-between"
-        gap="small"
         id={module.uuid}
         data-current={selectedUuid === module.uuid}
         className={styles.heading}
@@ -33,7 +33,7 @@ export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion
         <Typography.Title level={3} className={styles.title}>
           {module.name}
         </Typography.Title>
-        <Flex align="center" gap="small">
+        <Flex gap="small" align="center">
           <Button
             type="text"
             title={t('editModule')}

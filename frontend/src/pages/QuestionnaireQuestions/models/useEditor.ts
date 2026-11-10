@@ -18,6 +18,7 @@ export default create<Store>((set) => {
   const collapsedModuleUuids: string[] = [];
 
   const onOpen = (dialog: Dialog) => set({ dialog });
+
   const onClose = () => set({ dialog: undefined });
 
   const onModuleExpandChange = (uuid: string, expanded: boolean) =>

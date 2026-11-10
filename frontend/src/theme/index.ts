@@ -22,10 +22,12 @@ const theme: ThemeConfig = {
     Button: { primaryShadow: 'none', defaultShadow: 'none', fontWeight: 500 },
     Table: {
       headerBg: '#f4f6f1',
+      headerBorderRadius: 0,
       headerColor: '#58665c',
       headerSplitColor: 'transparent',
       rowHoverBg: '#f8faf6',
-      cellPaddingBlock: 17,
+      lineWidth: 0,
+      cellPaddingBlock: 8,
       cellPaddingInline: 20,
     },
     Typography: { titleMarginTop: 0, titleMarginBottom: 0 },

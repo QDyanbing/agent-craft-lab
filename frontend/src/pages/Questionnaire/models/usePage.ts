@@ -1,10 +1,10 @@
-import { DEFAULT_PAGE_SIZE } from '@/utils/pageSize';
+import { DEFAULT_PAGE_SIZE } from '@/utils/pagination';
 import { create } from 'zustand';
 
 interface Store {
   ready: boolean;
   params: API.QuestionnaireParams;
-  onSearch: (keyword: string) => void;
+  onSearch: (keyword?: string) => void;
   onPaginationChange: (pageNum: number, pageSize: number) => void;
   mount: () => void;
   unmount: () => void;
@@ -14,14 +14,21 @@ export default create<Store>((set) => {
   const ready = false;
   const params: API.QuestionnaireParams = { pageNum: 1, pageSize: DEFAULT_PAGE_SIZE };
 
-  const onSearch = (keyword: string) =>
-    set(({ params }) => ({
-      params: { ...params, keyword: keyword.trim() || undefined, pageNum: 1 },
-    }));
-  const onPaginationChange = (pageNum: number, pageSize: number) =>
+  const onSearch = (keyword?: string) => {
+    set(({ params }) => ({ params: { ...params, keyword, pageNum: 1 } }));
+  };
+
+  const onPaginationChange = (pageNum: number, pageSize: number) => {
     set(({ params }) => ({ params: { ...params, pageNum, pageSize } }));
-  const mount = () => set({ ready: true });
-  const unmount = () => set({ ready: false });
+  };
+
+  const mount = () => {
+    set({ ready: true });
+  };
+
+  const unmount = () => {
+    set({ ready: false });
+  };
 
   return { ready, params, onSearch, onPaginationChange, mount, unmount };
 });

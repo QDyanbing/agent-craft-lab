@@ -12,47 +12,66 @@ test.afterAll(async ({ request }) => {
   }
 });
 
-test('关键词搜索后翻页，切换关键词回到第一页', async ({ page, request }) => {
+test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({ page, request }) => {
   const keyword = randomUUID();
-  for (let index = 0; index < 11; index++) {
+  let oldestUuid = '';
+
+  for (let index = 0; index < 21; index++) {
     const response = await request.post('/api/questionnaires', {
-      data: { name: `${keyword}-${index}`, description: index === 10 ? `描述-${keyword}` : '' },
+      data: { name: `${keyword}-${index}`, description: index === 20 ? `描述-${keyword}` : '' },
     });
     expect(response.status()).toBe(201);
     const result = await response.json();
     expect(result.success).toBe(true);
     created.add(result.data.uuid);
+    if (index === 0) oldestUuid = result.data.uuid;
   }
+
   await page.setViewportSize({ width: 1120, height: 560 });
   await page.goto('/questionnaires');
   const search = page.getByPlaceholder('搜索问卷名称或描述');
   await search.fill(keyword);
   await search.press('Enter');
-  await expect(getPaginationTotal(page, 11)).toBeVisible();
+  await expect(getPaginationTotal(page, 21)).toBeVisible();
+
   const header = page.getByRole('columnheader', { name: '文件名称' });
   const controls = [
     header,
     search,
     page.getByRole('button', { name: '创建问卷' }),
-    getPaginationTotal(page, 11),
+    getPaginationTotal(page, 21),
   ];
   const positions = () => Promise.all(controls.map((control) => control.boundingBox()));
   const beforeScroll = await positions();
-  const first = page.getByRole('cell', { name: `${keyword}-10`, exact: true });
-  const last = page.getByRole('cell', { name: `${keyword}-1`, exact: true });
+  const first = page.getByRole('cell', { name: `${keyword}-20`, exact: true });
+  const last = page.getByRole('cell', { name: `${keyword}-11`, exact: true });
   await expect(first).toBeInViewport();
   await expect(last).not.toBeInViewport();
   await last.scrollIntoViewIfNeeded();
   await expect(last).toBeInViewport();
   await expect(first).not.toBeInViewport();
   expect(await positions()).toEqual(beforeScroll);
+
   await page.getByTitle('2', { exact: true }).click();
-  await expect(page.getByRole('cell', { name: `${keyword}-0`, exact: true })).toBeVisible();
+  const secondPage = page.getByRole('cell', { name: `${keyword}-10`, exact: true });
+  await expect(secondPage).toBeInViewport();
+
+  const dialog = page.getByRole('dialog');
+  await page
+    .getByRole('row')
+    .filter({ has: secondPage })
+    .getByRole('button', { name: /编\s*辑/ })
+    .click();
+  const renamed = `${keyword}-已编辑`;
+  await dialog.getByLabel('文件名称').fill(renamed);
+  await dialog.getByRole('button', { name: /保\s*存/ }).click();
+  await expect(page.getByRole('cell', { name: renamed, exact: true })).toBeInViewport();
+
   await search.fill(`描述-${keyword}`);
   await search.press('Enter');
   await expect(getPaginationTotal(page, 1)).toBeVisible();
-  await expect(page.getByRole('cell', { name: `${keyword}-10`, exact: true })).toBeVisible();
-  const dialog = page.getByRole('dialog');
+  await expect(first).toBeVisible();
+
   await page.getByRole('button', { name: '创建问卷' }).click();
   await dialog.getByLabel('文件名称').fill(` ${keyword}-0 `);
   await dialog.getByRole('button', { name: /创\s*建/ }).click();
@@ -71,9 +90,26 @@ test('关键词搜索后翻页，切换关键词回到第一页', async ({ page,
   await search.press('Enter');
   await expect(page.getByText('没有匹配的问卷')).toBeVisible();
   await expect(getPaginationTotal(page, 0)).toBeVisible();
+
+  await search.fill(keyword);
+  await search.press('Enter');
+  await page.getByTitle('3', { exact: true }).click();
+  const oldest = page.getByRole('cell', { name: `${keyword}-0`, exact: true });
+  await page
+    .getByRole('row')
+    .filter({ has: oldest })
+    .getByRole('button', { name: /删\s*除/ })
+    .click();
+  await page
+    .getByRole('tooltip')
+    .getByRole('button', { name: /删\s*除/ })
+    .click();
+  await expect(getPaginationTotal(page, 20)).toBeVisible();
+  await expect(first).toBeInViewport();
+  created.delete(oldestUuid);
   await search.fill('');
   await search.press('Enter');
-  await expect(page.getByRole('cell', { name: `${keyword}-10`, exact: true })).toBeVisible();
+  await expect(first).toBeVisible();
 });
 
 test('创建问卷，维护模块和四种题型，刷新后回显', async ({ page }) => {

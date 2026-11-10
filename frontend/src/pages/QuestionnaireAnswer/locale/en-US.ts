@@ -6,7 +6,5 @@ export default {
     submit: 'Submit response',
     submitted: 'Response submitted',
     empty: 'This questionnaire has no questions yet',
-    unavailable: 'Could not load this questionnaire',
-    retry: 'Retry',
   },
 } satisfies I18n.Locale;

@@ -22,8 +22,7 @@ const scrollToEntry = (uuid: string) =>
   document.getElementById(uuid)?.scrollIntoView({ block: 'start', inline: 'nearest' });
 
 export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
-  const dialog = useEditor((state) => state.dialog);
-  const { onOpen, onModuleExpandChange } = useEditor.getState();
+  const { dialog, onOpen, onModuleExpandChange } = useEditor();
 
   const hash = useLocation({ select: (location) => location.hash });
   const screens = Grid.useBreakpoint();
@@ -88,13 +87,13 @@ export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
         <Flex align="center" justify="center" className={styles.blankModule}>
           <Empty
             image={<FolderOpenOutlined />}
-            classNames={{ image: styles.emptyIcon }}
             description={
               <Flex vertical gap="small">
                 <Typography.Title level={4}>{t('moduleEmpty')}</Typography.Title>
                 <Typography.Text type="secondary">{t('firstModule')}</Typography.Text>
               </Flex>
             }
+            classNames={{ image: styles.emptyIcon }}
           >
             <AddButton label={t('newModule')} onClick={() => onOpen({ kind: 'module' })} />
           </Empty>

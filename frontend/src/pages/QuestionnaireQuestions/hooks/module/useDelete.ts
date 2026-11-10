@@ -1,5 +1,6 @@
+import useRequestAction from '@/hooks/useRequestAction';
 import { setModuleDelete } from '@/services/questionnaire';
-import { useLockFn, useRequest } from 'ahooks';
+import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import useDetail from '../../models/useDetail';
@@ -14,7 +15,7 @@ export default () => {
 
   const { loading, runAsync } = useRequest(setModuleDelete, { manual: true });
 
-  const onDelete = useLockFn(async (moduleUuid: string) => {
+  const onDelete = useRequestAction(async (moduleUuid: string) => {
     const { uuid } = usePage.getState();
     if (!uuid) return;
 

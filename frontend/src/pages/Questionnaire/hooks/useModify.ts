@@ -1,5 +1,6 @@
+import useRequestAction from '@/hooks/useRequestAction';
 import { setModify } from '@/services/questionnaire';
-import { useLockFn, useRequest } from 'ahooks';
+import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import useData from '../models/useData';
@@ -15,15 +16,16 @@ export default () => {
 
   const { loading, runAsync } = useRequest(setModify, { manual: true });
 
-  const onModify = useLockFn(async (values: API.QuestionnaireSetParams) => {
+  const onModify = useRequestAction(async (values: API.QuestionnaireSetParams) => {
     const { dialog } = useDialog.getState();
     if (!dialog?.survey) return;
-    const result = await runAsync(dialog.survey.uuid, values);
-    if (!result || useDialog.getState().dialog !== dialog) return;
 
-    message.success(t('saved'));
+    const result = await runAsync(dialog.survey.uuid, values);
+    if (!result) return;
+
+    message.success(t('message.modifySuccess'));
     onClose();
-    await onRefresh();
+    onRefresh();
   });
 
   return { loading, onModify };

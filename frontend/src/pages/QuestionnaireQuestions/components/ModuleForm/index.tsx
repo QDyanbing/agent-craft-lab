@@ -28,15 +28,15 @@ export default ({ module }: { module?: API.QuestionnaireModule }) => {
   return (
     <Modal
       open
-      title={t(module ? 'editModule' : 'newModule')}
       confirmLoading={loading}
+      title={t(module ? 'editModule' : 'newModule')}
       okText={t('save')}
       onOk={() => form.submit()}
       onCancel={() => {
         if (!loading) onClose();
       }}
     >
-      <Form layout="vertical" disabled={loading} form={form} onFinish={onFinish}>
+      <Form layout="vertical" form={form} disabled={loading} onFinish={onFinish}>
         <Form.Item
           name="name"
           label={t('moduleName')}

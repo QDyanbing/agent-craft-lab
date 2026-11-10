@@ -2,7 +2,6 @@ export default {
   language: 'en-US',
   namespace: 'questionnaireQuestions',
   resources: {
-    back: 'Questionnaires',
     outline: 'Questionnaire outline',
     newModule: 'Add module',
     editModule: 'Edit module',
@@ -33,8 +32,6 @@ export default {
     textAnswerPlaceholder: 'Enter your answer',
     number: 'Number',
     save: 'Save',
-    retry: 'Retry',
-    unavailable: 'Unable to load this questionnaire',
     numberedTitle: '{{number}} {{title}}',
     saved: 'Saved',
     deleted: 'Deleted',

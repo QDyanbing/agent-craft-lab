@@ -27,15 +27,18 @@ const renderInput = (question: API.QuestionnaireQuestion) => {
     case 'multiple':
       return (
         <Checkbox.Group
-          className={styles.choices}
           options={question.options.map((label, value) => ({ label, value }))}
+          className={styles.choices}
         />
       );
   }
 };
 
 export default ({ survey, loading, onCreate }: Props) => {
+  const [form] = Form.useForm<Answers>();
+
   const { t } = useTranslation('questionnaireAnswer');
+
   const [requestId] = useState(() => crypto.getRandomValues(new Uint32Array(4)).join('-'));
 
   const onFinish = (values: Answers) => {
@@ -46,12 +49,14 @@ export default ({ survey, loading, onCreate }: Props) => {
         return typeof value === 'number';
       }),
     );
+
     return onCreate({ requestId, revision: survey.revision, answers });
   };
 
   return (
-    <Form<Answers>
+    <Form
       layout="vertical"
+      form={form}
       disabled={loading}
       className={styles.answerForm}
       onFinish={onFinish}
@@ -67,7 +72,7 @@ export default ({ survey, loading, onCreate }: Props) => {
                     key={question.uuid}
                     name={question.uuid}
                     label={
-                      <Flex vertical component="span" gap="small">
+                      <Flex vertical gap="small" component="span">
                         {t('question', {
                           number: `${moduleIndex + 1}.${index + 1}`,
                           title: question.title,
@@ -86,7 +91,15 @@ export default ({ survey, loading, onCreate }: Props) => {
           ),
       )}
       <Flex justify="end">
-        <Button type="primary" htmlType="submit" loading={loading}>
+        <Button
+          type="primary"
+          htmlType="submit"
+          loading={loading}
+          onClick={(event) => {
+            event.preventDefault();
+            form.submit();
+          }}
+        >
           {t('submit')}
         </Button>
       </Flex>
