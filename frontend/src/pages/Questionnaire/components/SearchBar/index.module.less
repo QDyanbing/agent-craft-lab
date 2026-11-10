@@ -1,0 +1,47 @@
+.searchBar {
+  .cover {
+    position: relative;
+    isolation: isolate;
+    min-height: var(--questionnaire-cover-height);
+    padding: var(--ant-padding-sm) var(--ant-padding);
+    overflow: hidden;
+    border-radius: var(--ant-border-radius-lg);
+    background: var(--questionnaire-cover-bg);
+
+    &::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0 0 0 auto;
+      width: min(53%, calc(var(--questionnaire-cover-height) * 1.5));
+      background: url('../../../../assets/questionnaire-cover.webp') right center / cover no-repeat;
+      mask-image: linear-gradient(to right, transparent, black 28%);
+      content: '';
+    }
+  }
+
+  .intro {
+    max-width: 56%;
+  }
+
+  &:lang(en) .intro {
+    max-width: 100%;
+  }
+
+  .cover:lang(en)::before {
+    width: min(42%, calc(var(--questionnaire-cover-height) * 1.5));
+    mask-image: linear-gradient(to right, transparent, black 70%);
+  }
+
+  .title {
+    font-size: var(--ant-font-size-heading-3);
+    line-height: var(--ant-line-height-heading-3);
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .search {
+    flex: 1;
+    min-width: 0;
+    max-width: var(--search-input-width);
+  }
+}

@@ -1,0 +1,60 @@
+.questionnaire {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: var(--ant-margin-sm);
+  }
+
+  .list {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .body {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    container-type: size;
+
+    &[data-error='true'] {
+      overflow: auto;
+    }
+  }
+
+  .tableSection {
+    display: grid;
+    grid-template-rows: max-content minmax(0, 1fr);
+    max-height: 100cqh;
+    overflow: clip;
+    border: var(--ant-line-width) solid var(--ant-color-border-secondary);
+    border-radius: var(--ant-border-radius-lg);
+    background: var(--ant-color-bg-container);
+  }
+
+  .file,
+  .description {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .structure {
+    font-size: var(--ant-font-size-sm);
+  }
+
+  .action {
+    padding-inline: 0;
+  }
+
+  .footer {
+    flex: none;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+}
