@@ -1,0 +1,13 @@
+import type { CSSProperties } from 'react';
+
+type CSSVariables = CSSProperties & Record<`--${string}`, string | number>;
+
+const variables: CSSVariables = {
+  '--layout-header-action-bg-opacity': '16%',
+  '--layout-header-height': '56px',
+  '--layout-sider-collapsed-width': '80px',
+  '--layout-sider-width': '220px',
+  '--search-input-width': '360px',
+};
+
+export default variables;
