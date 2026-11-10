@@ -26,17 +26,17 @@ describe('页面跳转', () => {
   });
 
   test('新增或替换浏览器历史记录', () => {
-    const search = { userId: 'user-id' };
+    const search = { uuid: 'questionnaire-id' };
 
-    onHistoryChange('/users/detail', search);
-    onHistoryReplace('/login');
+    onHistoryChange('/questionnaires/edit', search);
+    onHistoryReplace('/questionnaires');
 
     expect(mocks.navigate).toHaveBeenNthCalledWith(1, {
-      to: '/users/detail',
+      to: '/questionnaires/edit',
       search,
     });
     expect(mocks.navigate).toHaveBeenNthCalledWith(2, {
-      to: '/login',
+      to: '/questionnaires',
       search: undefined,
       replace: true,
     });
@@ -45,7 +45,7 @@ describe('页面跳转', () => {
   test('存在历史记录时返回上一页', () => {
     mocks.canGoBack.mockReturnValue(true);
 
-    onHistoryBack('/users');
+    onHistoryBack('/questionnaires');
 
     expect(mocks.back).toHaveBeenCalledOnce();
     expect(mocks.navigate).not.toHaveBeenCalled();
@@ -54,17 +54,17 @@ describe('页面跳转', () => {
   test('不存在历史记录时替换为兜底页面', () => {
     mocks.canGoBack.mockReturnValue(false);
 
-    onHistoryBack('/users');
+    onHistoryBack('/questionnaires');
 
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/users', replace: true });
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/questionnaires', replace: true });
     expect(mocks.back).not.toHaveBeenCalled();
   });
 
   test('在新标签页打开页面', () => {
-    onOpenTab('/users/detail?userId=user-id');
+    onOpenTab('/questionnaires/edit?uuid=questionnaire-id');
 
     expect(mocks.open).toHaveBeenCalledWith(
-      '/users/detail?userId=user-id',
+      '/questionnaires/edit?uuid=questionnaire-id',
       '_blank',
       'noopener,noreferrer',
     );

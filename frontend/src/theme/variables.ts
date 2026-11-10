@@ -4,10 +4,6 @@ type CSSVariables = CSSProperties & Record<`--${string}`, string | number>;
 
 const variables: CSSVariables = {
   '--questionnaire-answer-width': '800px',
-  '--layout-header-action-bg-opacity': '16%',
-  '--layout-header-height': '56px',
-  '--layout-sider-collapsed-width': '80px',
-  '--layout-sider-width': '220px',
   '--questionnaire-brand-tracking': '-0.04em',
   '--questionnaire-content-width': '1200px',
   '--questionnaire-cover-bg': '#e5ecdeff',

@@ -26,24 +26,5 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: false,
   },
-  projects: [
-    {
-      name: 'setup',
-      testMatch: /auth\.setup\.ts/,
-      teardown: 'cleanup',
-    },
-    {
-      name: 'cleanup',
-      testMatch: /auth\.teardown\.ts/,
-    },
-    {
-      name: 'chromium',
-      dependencies: ['setup'],
-      testIgnore: /auth\.(setup|teardown)\.ts/,
-      use: {
-        browserName: 'chromium',
-        storageState: 'playwright/.auth/admin.json',
-      },
-    },
-  ],
+  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
 });

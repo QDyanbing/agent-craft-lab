@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  deleteToken: vi.fn(),
   emitMessage: vi.fn(),
-  getToken: vi.fn(),
   onHistoryReplace: vi.fn(),
 }));
 
@@ -16,10 +14,6 @@ vi.mock('@/i18n', () => ({
 }));
 vi.mock('@/utils/history', () => ({ onHistoryReplace: mocks.onHistoryReplace }));
 vi.mock('@/utils/message', () => ({ emitMessage: mocks.emitMessage }));
-vi.mock('@/utils/token', () => ({
-  deleteToken: mocks.deleteToken,
-  getToken: mocks.getToken,
-}));
 
 import Request, { RequestError } from './request';
 
@@ -34,13 +28,11 @@ const response = (data: unknown, status = 200, contentType = 'application/json')
 describe('统一请求', () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    mocks.deleteToken.mockReset();
     mocks.emitMessage.mockReset();
-    mocks.getToken.mockReset();
     mocks.onHistoryReplace.mockReset();
     vi.stubEnv('VITE_API_BASE_URL', '');
     vi.stubGlobal('fetch', fetchMock);
-    vi.stubGlobal('location', { pathname: '/roles', search: '?page=1' });
+    vi.stubGlobal('location', { pathname: '/questionnaires', search: '?page=1' });
   });
 
   afterEach(() => {
@@ -69,8 +61,7 @@ describe('统一请求', () => {
     expect(mocks.emitMessage).toHaveBeenCalledWith('error', '保存失败');
   });
 
-  test('GET 请求组装查询参数、Hash 和登录凭证', async () => {
-    mocks.getToken.mockReturnValue('access-token');
+  test('GET 请求组装查询参数和 Hash', async () => {
     fetchMock.mockResolvedValue(response({ success: true, data: ['item'] }));
 
     const result = await Request.get<
@@ -92,7 +83,6 @@ describe('统一请求', () => {
     expect(init.method).toBe('GET');
     expect(init.body).toBeUndefined();
     expect(headers.get('Accept')).toBe('application/json');
-    expect(headers.get('Authorization')).toBe('Bearer access-token');
   });
 
   test('使用环境变量中的 API 地址请求真实后端', async () => {
@@ -108,7 +98,6 @@ describe('统一请求', () => {
   });
 
   test('写请求序列化 JSON 并保留调用方请求头', async () => {
-    mocks.getToken.mockReturnValue('access-token');
     fetchMock.mockResolvedValue(response({ success: true, data: true }));
 
     await Request.post(
@@ -155,72 +144,8 @@ describe('统一请求', () => {
     );
   });
 
-  test('HTTP 401 按响应地址跳转登录页', async () => {
-    fetchMock.mockResolvedValue(
-      response(
-        {
-          errorMessage: '登录状态失效',
-          data: '/login?redirect=%2Froles',
-        },
-        401,
-      ),
-    );
-
-    const result = await Request.get('/api/test');
-
-    expect(result).toBeUndefined();
-    expect(mocks.deleteToken).toHaveBeenCalledOnce();
-    expect(mocks.onHistoryReplace).toHaveBeenCalledWith('/login?redirect=%2Froles');
-    expect(mocks.emitMessage).not.toHaveBeenCalled();
-  });
-
-  test('已经位于重定向地址时展示错误而不重复跳转', async () => {
-    vi.stubGlobal('location', { pathname: '/login', search: '?redirect=%2Froles' });
-    fetchMock.mockResolvedValue(
-      response(
-        {
-          errorMessage: '登录状态失效',
-          data: '/login?redirect=%2Froles',
-        },
-        401,
-      ),
-    );
-
-    await Request.get('/api/test');
-
-    expect(mocks.onHistoryReplace).not.toHaveBeenCalled();
-    expect(mocks.emitMessage).toHaveBeenCalledWith('error', '登录状态失效');
-  });
-
-  test('HTTP 401 没有返回跳转地址时携带当前页面跳转登录', async () => {
-    fetchMock.mockResolvedValue(response({ errorMessage: '登录状态失效' }, 401));
-
-    await Request.get('/api/test');
-
-    expect(mocks.deleteToken).toHaveBeenCalledOnce();
-    expect(mocks.onHistoryReplace).toHaveBeenCalledWith('/login?redirect=%2Froles%3Fpage%3D1');
-  });
-
-  test('登录页发生 401 时展示错误且忽略响应中的跳转地址', async () => {
-    vi.stubGlobal('location', { pathname: '/login', search: '' });
-    fetchMock.mockResolvedValue(
-      response(
-        {
-          errorMessage: '账号或密码错误',
-          data: '/login?redirect=%2Froles',
-        },
-        401,
-      ),
-    );
-
-    await Request.post('/api/login', { account: 'admin', password: 'error' });
-
-    expect(mocks.deleteToken).toHaveBeenCalledOnce();
-    expect(mocks.onHistoryReplace).not.toHaveBeenCalled();
-    expect(mocks.emitMessage).toHaveBeenCalledWith('error', '账号或密码错误');
-  });
-
   test.each([
+    [401, 'error', 'request.unauthorized'],
     [403, 'warning', 'request.forbidden'],
     [404, 'error', 'request.notFound'],
     [500, 'error', 'request.serverError'],
@@ -243,12 +168,12 @@ describe('统一请求', () => {
 
   test('业务重定向错误执行页面替换', async () => {
     fetchMock.mockResolvedValue(
-      response({ success: false, errorCode: '302', data: '/login?redirect=%2Froles' }),
+      response({ success: false, errorCode: '302', data: '/questionnaires/edit?uuid=test' }),
     );
 
     await Request.get('/api/test');
 
-    expect(mocks.onHistoryReplace).toHaveBeenCalledWith('/login?redirect=%2Froles');
+    expect(mocks.onHistoryReplace).toHaveBeenCalledWith('/questionnaires/edit?uuid=test');
   });
 
   test('业务警告和系统错误使用对应兜底文案', async () => {

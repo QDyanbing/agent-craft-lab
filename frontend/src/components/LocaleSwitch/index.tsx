@@ -1,15 +1,9 @@
 import languages, { getLanguage } from '@/i18n/languages';
 import { DownOutlined, GlobalOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Flex } from 'antd';
-import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import styles from './index.module.less';
 
-interface Props {
-  variant?: 'default' | 'inverse';
-}
-
-export default ({ variant = 'default' }: Props) => {
+export default () => {
   const { t, i18n } = useTranslation('localeSwitch');
   const { label, locale } = getLanguage(i18n.resolvedLanguage);
 
@@ -27,14 +21,7 @@ export default ({ variant = 'default' }: Props) => {
         onClick: ({ key }) => void i18n.changeLanguage(key),
       }}
     >
-      <Button
-        type="text"
-        icon={<GlobalOutlined />}
-        className={clsx(styles.localeSwitch, {
-          [styles.inverse]: variant === 'inverse',
-        })}
-        aria-label={t('label')}
-      >
+      <Button type="text" icon={<GlobalOutlined />} aria-label={t('label')}>
         <Flex align="center" gap="small" component="span">
           {label}
           <DownOutlined />

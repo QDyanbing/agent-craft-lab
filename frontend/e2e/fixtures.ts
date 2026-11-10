@@ -18,7 +18,7 @@ const resetPage = async (page: Page, storageState: BrowserContextOptions['storag
   const state = await getStorageState(storageState);
 
   await context.clearCookies();
-  await page.goto('/login');
+  await page.goto('/');
 
   const origin = new URL(page.url()).origin;
   const localStorageData =

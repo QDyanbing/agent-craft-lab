@@ -12,8 +12,6 @@ test.afterAll(async ({ request }) => {
   }
 });
 
-test.use({ storageState: { cookies: [], origins: [] } });
-
 test('关键词搜索后翻页，切换关键词回到第一页', async ({ page, request }) => {
   const keyword = randomUUID();
   for (let index = 0; index < 11; index++) {

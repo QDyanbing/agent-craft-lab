@@ -6,7 +6,7 @@ export default {
       total: '{{count}} items',
     },
     request: {
-      unauthorized: 'Your session has expired. Please sign in again.',
+      unauthorized: 'This request is unauthorized.',
       forbidden: 'You do not have permission to perform this action.',
       notFound: 'The requested resource does not exist.',
       serverError: 'The service is unavailable. Please try again later.',

@@ -1,7 +1,6 @@
 import i18n from '@/i18n';
 import { onHistoryReplace } from '@/utils/history';
 import { emitMessage } from '@/utils/message';
-import { deleteToken, getToken } from '@/utils/token';
 
 type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   skipErrorHandler?: boolean;
@@ -107,22 +106,12 @@ function getStatusMessage(status: number) {
 
 function createHttpError(response: Response, data: unknown, cause?: unknown) {
   const status = response.status;
-  let redirect: string | undefined;
-  let level: 'warning' | 'error' = 'error';
-
-  if (status === 401) {
-    redirect = getResponseRedirect(data);
-  }
-
-  if (status === 403) {
-    level = 'warning';
-  }
+  const level = status === 403 ? 'warning' : 'error';
 
   return new RequestError(getResponseMessage(data) ?? getStatusMessage(status), {
     cause,
     data,
     level,
-    redirect,
     status,
   });
 }
@@ -137,12 +126,7 @@ function createBusinessError(data: unknown) {
     errorCode = Number.parseInt(String(data.errorCode), 10);
   }
 
-  let redirect: string | undefined;
-  if (errorCode === 401) {
-    redirect = getResponseRedirect(data);
-  } else if (errorCode >= 300 && errorCode < 400) {
-    redirect = getResponseRedirect(data);
-  }
+  const redirect = errorCode >= 300 && errorCode < 400 ? getResponseRedirect(data) : undefined;
 
   let level: 'warning' | 'error' = 'error';
   if ('errorType' in data && data.errorType === 'WARNING') {
@@ -180,25 +164,10 @@ function isSuccessResult(data: unknown): data is API.SuccessResult<unknown> {
 }
 
 function handleGlobalError(error: RequestError) {
-  const currentPath = `${location.pathname}${location.search}`;
-  let redirect = error.redirect;
-
-  if (error.status === 401) {
-    deleteToken();
-    if (location.pathname === '/login') {
-      redirect = undefined;
-    } else if (!redirect) {
-      redirect = `/login?redirect=${encodeURIComponent(currentPath)}`;
-    }
+  if (error.redirect && error.redirect !== `${location.pathname}${location.search}`) {
+    onHistoryReplace(error.redirect);
+    return;
   }
-
-  if (redirect) {
-    if (currentPath !== redirect) {
-      onHistoryReplace(redirect);
-      return;
-    }
-  }
-
   emitMessage(error.level, error.message);
 }
 
@@ -236,15 +205,11 @@ async function send<TData, TResult>(
 ): Promise<API.SuccessResult<TResult> | undefined> {
   const { skipErrorHandler = false, localErrorKeys, ...init } = options;
   const headers = new Headers(init.headers);
-  const token = getToken();
   let requestUrl = `${import.meta.env.VITE_API_BASE_URL ?? ''}${url}`;
 
   if (method === 'GET') requestUrl = appendSearchParams(requestUrl, data);
 
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
 
   let body: BodyInit | undefined;
   if (method !== 'GET' && data !== undefined) {

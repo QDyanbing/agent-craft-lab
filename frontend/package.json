@@ -1,19 +1,18 @@
 {
-  "name": "react-project-template",
+  "name": "agent-craft-lab-frontend",
   "version": "0.0.0",
-  "description": "A production-oriented React project template with authentication, RBAC, i18n, mocks, and tests.",
+  "description": "CraftLab questionnaire management, editing, and response collection.",
   "keywords": [
     "react",
     "typescript",
     "vite",
     "antd",
-    "zustand",
-    "template"
+    "zustand"
   ],
-  "homepage": "https://github.com/QDyanbing/react-project-template#readme",
+  "homepage": "https://github.com/QDyanbing/agent-craft-lab#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/QDyanbing/react-project-template.git"
+    "url": "https://github.com/QDyanbing/agent-craft-lab.git"
   },
   "license": "MIT",
   "type": "module",
@@ -48,7 +47,6 @@
     "@tanstack/react-router": "^1.170.30",
     "ahooks": "^3.9.7",
     "antd": "^6.6.1",
-    "clsx": "^2.1.1",
     "dayjs": "^1.11.23",
     "i18next": "^26.3.6",
     "react": "^19.2.8",
