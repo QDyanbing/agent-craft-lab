@@ -1,5 +1,7 @@
 # CraftLab：项目制学习 Agent
 
+[第一篇：什么是 Agent](docs/articles/01-what-is-agent.md)
+
 ## 1. 产品分析
 
 ### 1.1 产品是什么

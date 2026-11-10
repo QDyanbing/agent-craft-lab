@@ -1,0 +1,26 @@
+import useRequestAction from '@/hooks/useRequestAction';
+import { setDelete } from '@/services/questionnaire';
+import { useRequest } from 'ahooks';
+import { App } from 'antd';
+import { useTranslation } from 'react-i18next';
+import useData from '../models/useData';
+
+export default () => {
+  const { onRefresh } = useData.getState();
+
+  const { t } = useTranslation('questionnaire');
+
+  const { message } = App.useApp();
+
+  const { loading, runAsync } = useRequest(setDelete, { manual: true });
+
+  const onDelete = useRequestAction(async (uuid: string) => {
+    const result = await runAsync(uuid);
+    if (!result) return;
+
+    message.success(t('message.deleteSuccess'));
+    onRefresh();
+  });
+
+  return { loading, onDelete };
+};

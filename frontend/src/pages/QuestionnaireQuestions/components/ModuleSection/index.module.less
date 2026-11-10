@@ -1,0 +1,30 @@
+.moduleSection {
+  min-width: 0;
+
+  .heading {
+    padding: var(--ant-padding-sm) var(--ant-padding);
+    scroll-margin-block-start: var(--ant-margin-sm);
+    border-radius: var(--ant-border-radius);
+    background: var(--ant-color-fill-quaternary);
+
+    &[data-current='true'] {
+      background: var(--ant-color-primary-bg);
+    }
+  }
+
+  .title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--ant-font-size-heading-4);
+  }
+
+  .empty {
+    margin: 0;
+    padding: var(--ant-padding) var(--ant-padding-lg);
+    text-align: start;
+
+    .emptyImage {
+      display: none;
+    }
+  }
+}

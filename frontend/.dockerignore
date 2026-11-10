@@ -1,0 +1,13 @@
+.DS_Store
+.env
+.env.*
+.git
+.github
+coverage
+dist
+artifacts
+docs
+node_modules
+playwright-report
+test-results
+*.log

@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: ut run format:check
+      - run: ut run lint
+      - run: ut run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: ut run test:coverage
+      - run: ut run test:workflow
+      - run: ut run test:release
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: ut run build
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build production image
+        run: docker build --tag craftlab-frontend:ci .
+      - name: Start test backend
+        run: |
+          mkdir -p "$RUNNER_TEMP/container-api-v1/api" "$RUNNER_TEMP/container-api-v2/api"
+          printf 'proxy-ok\n' > "$RUNNER_TEMP/container-api-v1/api/test"
+          printf 'proxy-recovered\n' > "$RUNNER_TEMP/container-api-v2/api/test"
+          docker network create --subnet 172.28.0.0/24 craftlab-frontend-ci
+          docker run --detach \
+            --name craftlab-frontend-api \
+            --network craftlab-frontend-ci \
+            --volume "$RUNNER_TEMP/container-api-v1:/usr/share/nginx/html:ro" \
+            nginx:1.30.4-alpine3.24
+
+          for attempt in {1..10}; do
+            if docker exec craftlab-frontend-api wget --quiet --spider http://127.0.0.1/api/test; then
+              break
+            fi
+            sleep 1
+          done
+
+          docker exec craftlab-frontend-api wget --quiet --spider http://127.0.0.1/api/test
+      - name: Start production container
+        run: |
+          docker run --detach \
+            --name craftlab-frontend-ci \
+            --network craftlab-frontend-ci \
+            --publish 8080:80 \
+            --env API_UPSTREAM=http://craftlab-frontend-api \
+            craftlab-frontend:ci
+      - name: Verify production container
+        run: |
+          for attempt in {1..10}; do
+            if curl --fail --silent http://127.0.0.1:8080/healthz; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent --show-error http://127.0.0.1:8080/healthz
+          curl --fail --silent --show-error http://127.0.0.1:8080/questionnaires/questions | grep --fixed-strings '<div id="root"></div>'
+          curl --silent --show-error --head http://127.0.0.1:8080/index.html | grep --ignore-case 'Cache-Control: no-cache'
+
+          asset_path=$(docker exec craftlab-frontend-ci sh -c 'find /usr/share/nginx/html/assets -type f | head -n 1')
+          asset_path=${asset_path#/usr/share/nginx/html}
+          curl --silent --show-error --head "http://127.0.0.1:8080${asset_path}" | grep --ignore-case 'Cache-Control: public, max-age=31536000, immutable'
+
+          test "$(curl --fail --silent --show-error http://127.0.0.1:8080/api/test)" = proxy-ok
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/missing)" = 404
+      - name: Verify backend DNS refresh
+        run: |
+          old_backend_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' craftlab-frontend-api)
+          docker rm --force craftlab-frontend-api
+          docker run --detach \
+            --name craftlab-frontend-api-old-ip \
+            --network craftlab-frontend-ci \
+            --ip "$old_backend_ip" \
+            --volume "$RUNNER_TEMP/container-api-v1:/usr/share/nginx/html:ro" \
+            nginx:1.30.4-alpine3.24
+          docker run --detach \
+            --name craftlab-frontend-api \
+            --network craftlab-frontend-ci \
+            --volume "$RUNNER_TEMP/container-api-v2:/usr/share/nginx/html:ro" \
+            nginx:1.30.4-alpine3.24
+
+          new_backend_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' craftlab-frontend-api)
+          test "$new_backend_ip" != "$old_backend_ip"
+
+          for attempt in {1..20}; do
+            if test "$(curl --fail --max-time 2 --silent http://127.0.0.1:8080/api/test || true)" = proxy-recovered; then
+              break
+            fi
+            sleep 1
+          done
+
+          test "$(curl --fail --max-time 5 --silent --show-error http://127.0.0.1:8080/api/test)" = proxy-recovered
+      - if: failure()
+        name: Print container logs
+        run: |
+          docker logs craftlab-frontend-api || true
+          docker logs craftlab-frontend-api-old-ip || true
+          docker logs craftlab-frontend-ci || true
+      - if: always()
+        name: Remove test containers
+        run: |
+          docker rm --force craftlab-frontend-api craftlab-frontend-api-old-ip craftlab-frontend-ci 2>/dev/null || true
+          docker network rm craftlab-frontend-ci 2>/dev/null || true
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: ut execute playwright install --with-deps chromium
+      - run: ut run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-diagnostics
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ci:
+    if: always()
+    needs:
+      - lint
+      - test
+      - build
+      - container
+      - e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check required jobs
+        run: |
+          test '${{ needs.lint.result }}' = success
+          test '${{ needs.test.result }}' = success
+          test '${{ needs.build.result }}' = success
+          test '${{ needs.container.result }}' = success
+          test '${{ needs.e2e.result }}' = success
