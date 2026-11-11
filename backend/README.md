@@ -1,6 +1,6 @@
 # 本地问卷 API
 
-问卷后端使用 NestJS、Fastify 和 SQLite，默认监听 `127.0.0.1:3000`。问卷和答卷保存在 `backend/data/questionnaires.sqlite`，重启后可继续使用。
+问卷后端使用 NestJS、Fastify 和 SQLite，默认监听 `127.0.0.1:3000`。问卷和答卷保存在 `backend/data/questionnaires.sqlite`，重启后可继续使用。12 个问卷接口的请求、返回和错误按接口分开放在 [docs/2026-11-11](docs/2026-11-11)，目录按问卷、模块、题目分组。
 
 ## 运行
 
