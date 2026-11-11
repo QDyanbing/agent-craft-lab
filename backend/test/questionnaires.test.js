@@ -50,6 +50,7 @@ test(
       for (const invalid of [
         {},
         { unknown: 1 },
+        { ...answers, unknown: 1 },
         { [saved[0].uuid]: 2 },
         { [saved[1].uuid]: [0, 0] },
         { [saved[2].uuid]: " " },
@@ -66,12 +67,17 @@ test(
       await first.stop();
       const editing = await start(db, t);
       request = editing.request;
-      assert.deepEqual(await request("POST", responses, submission), response);
+      const reordered = Object.fromEntries(Object.entries(answers).reverse());
+      assert.deepEqual(
+        await request("POST", responses, { ...submission, answers: reordered }),
+        response,
+      );
       await request(
         "POST",
         responses,
         { ...submission, answers: { [saved[3].uuid]: 1 } },
         409,
+        "questionnaire:errors.submitted",
       );
       assert.deepEqual(
         (await request("GET", survey)).modules[0].questions,
