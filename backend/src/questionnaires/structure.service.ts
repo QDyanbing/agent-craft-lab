@@ -5,7 +5,7 @@ import { changed, QuestionnaireError } from './questionnaire.error.js';
 import type { QuestionDto } from './questionnaire.dto.js';
 
 function optionsJson(dto: QuestionDto) {
-  return JSON.stringify(dto.type === 'single' || dto.type === 'multiple' ? dto.options : []);
+  return JSON.stringify(dto.type === 'SINGLE' || dto.type === 'MULTIPLE' ? dto.options : []);
 }
 
 @Injectable()
@@ -18,7 +18,7 @@ export class StructureService {
 
   private requireModule(survey: string, module: string) {
     if (
-      !this.db.prepare('SELECT 1 FROM modules WHERE uuid = ? AND survey = ?').get(module, survey)
+      !this.db.prepare('SELECT 1 FROM craft_lab_modules WHERE uuid = ? AND questionnaire_uuid = ?').get(module, survey)
     ) {
       throw new QuestionnaireError('module');
     }
@@ -26,12 +26,12 @@ export class StructureService {
 
   createModule(survey: string, name: string) {
     return this.database.transaction('IMMEDIATE', () => {
-      if (!this.db.prepare('SELECT 1 FROM questionnaires WHERE uuid = ?').get(survey)) {
-        throw new QuestionnaireError('survey');
+      if (!this.db.prepare('SELECT 1 FROM craft_lab_questionnaires WHERE uuid = ?').get(survey)) {
+        throw new QuestionnaireError('questionnaire');
       }
       const uuid = randomUUID();
       this.db
-        .prepare('INSERT INTO modules (uuid, survey, name) VALUES (?, ?, ?)')
+        .prepare('INSERT INTO craft_lab_modules (uuid, questionnaire_uuid, name) VALUES (?, ?, ?)')
         .run(uuid, survey, name);
       return { uuid };
     });
@@ -40,14 +40,16 @@ export class StructureService {
   updateModule(survey: string, module: string, name: string) {
     return changed(
       this.db
-        .prepare('UPDATE modules SET name = ? WHERE uuid = ? AND survey = ?')
+        .prepare(
+          'UPDATE craft_lab_modules SET name = ?, gmt_modified = CURRENT_TIMESTAMP WHERE uuid = ? AND questionnaire_uuid = ?',
+        )
         .run(name, module, survey),
     );
   }
 
   removeModule(survey: string, module: string) {
     return changed(
-      this.db.prepare('DELETE FROM modules WHERE uuid = ? AND survey = ?').run(module, survey),
+      this.db.prepare('DELETE FROM craft_lab_modules WHERE uuid = ? AND questionnaire_uuid = ?').run(module, survey),
     );
   }
 
@@ -57,7 +59,7 @@ export class StructureService {
       const uuid = randomUUID();
       this.db
         .prepare(
-          'INSERT INTO questions (uuid, module, type, title, description, options) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO craft_lab_questions (uuid, module_uuid, type, title, description, options) VALUES (?, ?, ?, ?, ?, ?)',
         )
         .run(uuid, module, dto.type, dto.title, dto.description, optionsJson(dto));
       return { uuid };
@@ -67,13 +69,22 @@ export class StructureService {
   updateQuestion(survey: string, module: string, uuid: string, dto: QuestionDto) {
     return this.database.transaction('IMMEDIATE', () => {
       this.requireModule(survey, module);
-      return changed(
+      const previous = this.db
+        .prepare('SELECT type, options FROM craft_lab_questions WHERE uuid = ? AND module_uuid = ?')
+        .get(uuid, module);
+      if (!previous) throw new QuestionnaireError('record');
+      const nextOptions = optionsJson(dto);
+      const result = changed(
         this.db
           .prepare(
-            'UPDATE questions SET type = ?, title = ?, description = ?, options = ? WHERE uuid = ? AND module = ?',
+            'UPDATE craft_lab_questions SET type = ?, title = ?, description = ?, options = ?, gmt_modified = CURRENT_TIMESTAMP WHERE uuid = ? AND module_uuid = ?',
           )
-          .run(dto.type, dto.title, dto.description, optionsJson(dto), uuid, module),
+          .run(dto.type, dto.title, dto.description, nextOptions, uuid, module),
       );
+      if (String(previous.type) !== dto.type || String(previous.options) !== nextOptions) {
+        this.db.prepare('DELETE FROM craft_lab_answer WHERE question_uuid = ?').run(uuid);
+      }
+      return result;
     });
   }
 
@@ -81,7 +92,7 @@ export class StructureService {
     return this.database.transaction('IMMEDIATE', () => {
       this.requireModule(survey, module);
       return changed(
-        this.db.prepare('DELETE FROM questions WHERE uuid = ? AND module = ?').run(uuid, module),
+        this.db.prepare('DELETE FROM craft_lab_questions WHERE uuid = ? AND module_uuid = ?').run(uuid, module),
       );
     });
   }

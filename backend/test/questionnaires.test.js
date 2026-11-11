@@ -29,59 +29,64 @@ test(
       await request("PUT", entry, { name: "基础信息" });
       const qs = entry + "/questions";
       const saved = [];
-      for (const type of ["single", "multiple", "text", "number"]) {
-        const options = ["single", "multiple"].includes(type)
+      for (const type of ["SINGLE", "MULTIPLE", "TEXT", "NUMBER"]) {
+        const options = ["SINGLE", "MULTIPLE"].includes(type)
           ? ["是", "否"]
           : [];
         const body = { type, title: type, description: "说明", options };
         const id = await request("POST", qs, body);
         saved.push({ uuid: id.uuid, ...body });
       }
-      const original = await request("GET", survey);
       const answers = Object.fromEntries(
         saved.map((q, i) => [q.uuid, [0, [0, 1], "我的答案", 0][i]]),
       );
-      const submission = {
-        requestId: "first-attempt",
-        revision: original.revision,
-        answers,
-      };
-      const responses = survey + "/responses";
-      for (const invalid of [
-        {},
-        { unknown: 1 },
-        { ...answers, unknown: 1 },
-        { [saved[0].uuid]: 2 },
-        { [saved[1].uuid]: [0, 0] },
-        { [saved[2].uuid]: " " },
-        { [saved[3].uuid]: "0" },
-      ]) {
-        await request(
+      const responses = entry + "/questions/";
+      const answer = (question, value, status = 201, errorKey) =>
+        request(
           "POST",
-          responses,
-          { ...submission, answers: invalid },
-          400,
+          responses + question + "/answer",
+          { answer: value },
+          status,
+          errorKey,
         );
+      await answer(undefined, undefined, 400);
+      await answer("unknown", 1, 404);
+      await answer(saved[0].uuid, 2, 400);
+      await answer(saved[1].uuid, [0, 0], 400);
+      await answer(saved[2].uuid, " ", 400);
+      await answer(saved[3].uuid, "0", 400);
+      const answerIds = {};
+      for (const question of saved) {
+        const submitted = await answer(question.uuid, answers[question.uuid]);
+        assert.equal(typeof submitted.uuid, "string");
+        answerIds[question.uuid] = submitted.uuid;
       }
-      const response = await request("POST", responses, submission);
+      assert.equal(new Set(Object.values(answerIds)).size, saved.length);
+      assert.deepEqual(
+        (await request("GET", survey)).modules[0].questions.map((question) => question.answer),
+        saved.map((question) => answers[question.uuid]),
+      );
       await first.stop();
       const editing = await start(db, t);
       request = editing.request;
-      const reordered = Object.fromEntries(Object.entries(answers).reverse());
       assert.deepEqual(
-        await request("POST", responses, { ...submission, answers: reordered }),
-        response,
+        (await request("GET", survey)).modules[0].questions.map((question) => question.answer),
+        saved.map((question) => answers[question.uuid]),
       );
-      await request(
-        "POST",
-        responses,
-        { ...submission, answers: { [saved[3].uuid]: 1 } },
-        409,
-        "questionnaire:errors.submitted",
+      for (const question of [...saved].reverse()) {
+        assert.deepEqual(
+          await answer(question.uuid, answers[question.uuid]),
+          { uuid: answerIds[question.uuid] },
+        );
+      }
+      assert.deepEqual(await answer(saved[3].uuid, 1), { uuid: answerIds[saved[3].uuid] });
+      assert.deepEqual(
+        await answer(saved[3].uuid, answers[saved[3].uuid]),
+        { uuid: answerIds[saved[3].uuid] },
       );
       assert.deepEqual(
         (await request("GET", survey)).modules[0].questions,
-        saved,
+        saved.map((question) => ({ ...question, answer: answers[question.uuid] })),
       );
 
       const sibling = await request("POST", survey + "/modules", {
@@ -92,7 +97,7 @@ test(
       await request(
         "PUT",
         wrongQuestion,
-        { type: "text", title: "跨模块修改" },
+        { type: "TEXT", title: "跨模块修改" },
         404,
       );
       await request("DELETE", wrongQuestion, undefined, 404);
@@ -101,8 +106,9 @@ test(
       await request(
         "POST",
         qs,
-        { type: "single", title: "无选项", options: [" "] },
+        { type: "SINGLE", title: "无选项", options: [" "] },
         400,
+        "questionnaire:errors.options",
       );
       await request(
         "DELETE",
@@ -112,35 +118,42 @@ test(
       );
       const edited = {
         ...saved[0],
-        type: "multiple",
+        type: "MULTIPLE",
         title: "兴趣",
         description: "选择兴趣",
         options: ["阅读", "跑步", "音乐"],
       };
       await request("PUT", qs + "/" + edited.uuid, edited);
-      await request(
-        "POST",
-        responses,
-        { ...submission, requestId: "outdated-copy" },
-        409,
-      );
       saved[0] = edited;
-      const converted = { ...saved[1], type: "text", title: "备注" };
+      delete answers[edited.uuid];
+      const converted = { ...saved[1], type: "TEXT", title: "备注" };
       await request("PUT", qs + "/" + converted.uuid, converted);
       saved[1] = { ...converted, options: [] };
-      await request("DELETE", qs + "/" + saved.pop().uuid);
+      delete answers[converted.uuid];
+      const removed = saved.pop();
+      await request("DELETE", qs + "/" + removed.uuid);
+      delete answers[removed.uuid];
       await editing.stop();
 
       const second = await start(db, t);
-      const { revision, ...detail } = await second.request("GET", survey);
-      assert.notEqual(revision, original.revision);
-      assert.deepEqual(detail, {
+      assert.deepEqual(await second.request("GET", survey), {
         uuid,
         name: "调查",
         description: "学习情况",
-        modules: [{ uuid: module.uuid, name: "基础信息", questions: saved }],
+        modules: [
+          {
+            uuid: module.uuid,
+            name: "基础信息",
+            questions: saved.map((question) =>
+              Object.hasOwn(answers, question.uuid)
+                ? { ...question, answer: answers[question.uuid] }
+                : question,
+            ),
+          },
+        ],
       });
-      const list = await second.request("GET", "");
+      await second.request("GET", "", undefined, 400);
+      const { list } = await second.request("GET", "?pageNum=1&pageSize=10");
       assert.equal(list.length, 2);
       assert.deepEqual(await second.request("GET", "?pageNum=1&pageSize=1"), {
         list: [list[0]],
@@ -156,7 +169,7 @@ test(
       });
       assert.equal(list[0].description, "");
       await second.request("GET", "?pageNum=0&pageSize=1", undefined, 400);
-      await second.request("GET", "?pageNum=1", undefined, 400);
+      assert.deepEqual(await second.request("GET", "?pageNum=1"), { list, total: 2 });
       assert.deepEqual(
         list.find((item) => item.uuid === uuid),
         {
@@ -171,20 +184,19 @@ test(
       assert.deepEqual((await second.request("GET", survey)).modules, []);
       await second.request("PUT", qs + "/" + edited.uuid, edited, 404);
       assert.equal(
-        (await second.request("GET", "")).find((item) => item.uuid === uuid)
+        (await second.request("GET", "?pageNum=1&pageSize=10")).list.find(
+          (item) => item.uuid === uuid,
+        )
           .questionCount,
         0,
       );
       await second.stop();
       const connection = new DatabaseSync(db, { readOnly: true });
       try {
-        const rows = connection
-          .prepare("SELECT uuid, snapshot, answers FROM responses")
-          .all();
-        assert.equal(rows.length, 1);
-        assert.equal(rows[0].uuid, response.uuid);
-        assert.deepEqual(JSON.parse(rows[0].answers), answers);
-        assert.deepEqual(JSON.parse(rows[0].snapshot), original);
+        assert.equal(
+          connection.prepare("SELECT count(*) AS count FROM craft_lab_answer").get().count,
+          0,
+        );
       } finally {
         connection.close();
       }
@@ -220,7 +232,7 @@ test("duplicate questionnaire names are rejected on create and rename", async (t
   assert.equal((await request("GET", "/" + first.uuid)).description, "新描述");
   await request("DELETE", "/" + first.uuid);
   await request("PUT", "/" + second.uuid, { name: "反馈 A" });
-  assert.equal((await request("GET", "")).length, 1);
+  assert.equal((await request("GET", "?pageNum=1&pageSize=10")).total, 1);
 });
 
 test("keyword search counts matching surveys before pagination", async (t) => {
@@ -258,9 +270,13 @@ test("keyword search counts matching surveys before pagination", async (t) => {
   assert.deepEqual(await search("不存在", 1), { list: [], total: 0 });
   assert.equal((await search("", 1)).total, 3);
   assert.deepEqual(
-    (await request("GET", "?" + new URLSearchParams({ keyword: "%_ok" }))).map(
-      (q) => q.uuid,
-    ),
+    (
+      await request(
+        "GET",
+        "?" +
+          new URLSearchParams({ keyword: "%_ok", pageNum: "1", pageSize: "10" }),
+      )
+    ).list.map((q) => q.uuid),
     [byDescription.uuid],
   );
 });
@@ -282,18 +298,22 @@ test("editing and deleting a questionnaire persists and affects only that survey
       "POST",
       path + "/modules/" + module.uuid + "/questions",
       {
-        type: "text",
+        type: "TEXT",
         title: "意见",
       },
     );
     const original = await request("GET", path);
-    await request("POST", path + "/responses", {
-      requestId: "test",
-      revision: original.revision,
-      answers: { [question.uuid]: "很好" },
-    });
+    await request(
+      "POST",
+      path + "/modules/" + module.uuid + "/questions/" + question.uuid + "/answer",
+      {
+        answer: "很好",
+      },
+    );
+    const answered = structuredClone(original);
+    answered.modules[0].questions[0].answer = "很好";
     await request("PUT", path, { name: " ", description: "忽略" }, 400);
-    assert.deepEqual(await request("GET", path), original);
+    assert.deepEqual(await request("GET", path), answered);
     await request("PUT", path, { name: "新名称", description: "" });
     await server.stop();
 
@@ -301,7 +321,7 @@ test("editing and deleting a questionnaire persists and affects only that survey
     const edited = await reopened.request("GET", path);
     assert.equal(edited.name, "新名称");
     assert.equal(edited.description, "");
-    assert.deepEqual(edited.modules, original.modules);
+    assert.deepEqual(edited.modules, answered.modules);
     await reopened.request("DELETE", path);
     await reopened.request("GET", path, undefined, 404);
     await reopened.request("DELETE", path, undefined, 404);
@@ -312,12 +332,12 @@ test("editing and deleting a questionnaire persists and affects only that survey
     try {
       assert.deepEqual(
         db
-          .prepare("SELECT uuid FROM questionnaires")
+          .prepare("SELECT uuid FROM craft_lab_questionnaires")
           .all()
           .map((r) => r.uuid),
         [keep.uuid],
       );
-      for (const table of ["modules", "questions", "responses"]) {
+      for (const table of ["craft_lab_modules", "craft_lab_questions", "craft_lab_answer"]) {
         assert.equal(
           db.prepare(`SELECT count(*) AS count FROM ${table}`).get().count,
           0,

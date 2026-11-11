@@ -1,21 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
-import {
-  ModuleDto,
-  QuestionnaireDto,
-  QuestionDto,
-  SearchDto,
-  SubmitResponseDto,
-} from './questionnaire.dto.js';
+import { ModuleDto, QuestionnaireDto, QuestionDto, SearchDto, SubmitResponseDto } from './questionnaire.dto.js';
 import { QuestionnaireService } from './questionnaire.service.js';
-import { StructureService } from './structure.service.js';
 import { ResponseService } from './response.service.js';
+import { StructureService } from './structure.service.js';
 
 @Controller('questionnaires')
 export class QuestionnaireController {
-  constructor(
-    private readonly surveys: QuestionnaireService,
-    private readonly responses: ResponseService,
-  ) {}
+  constructor(private readonly surveys: QuestionnaireService) {}
 
   @Get()
   search(@Query() query: SearchDto) {
@@ -27,75 +18,83 @@ export class QuestionnaireController {
     return this.surveys.create(dto);
   }
 
-  @Get(':survey')
-  detail(@Param('survey') survey: string) {
-    return this.surveys.detail(survey);
+  @Get(':questionnaireUuid')
+  detail(@Param('questionnaireUuid') uuid: string) {
+    return this.surveys.detail(uuid);
   }
 
-  @Put(':survey')
-  update(@Param('survey') survey: string, @Body() dto: QuestionnaireDto) {
-    return this.surveys.update(survey, dto);
+  @Put(':questionnaireUuid')
+  update(@Param('questionnaireUuid') uuid: string, @Body() dto: QuestionnaireDto) {
+    return this.surveys.update(uuid, dto);
   }
 
-  @Delete(':survey')
-  remove(@Param('survey') survey: string) {
-    return this.surveys.remove(survey);
-  }
-
-  @Post(':survey/responses')
-  submit(@Param('survey') survey: string, @Body() dto: SubmitResponseDto) {
-    return this.responses.submit(survey, dto);
+  @Delete(':questionnaireUuid')
+  remove(@Param('questionnaireUuid') uuid: string) {
+    return this.surveys.remove(uuid);
   }
 }
 
-@Controller('questionnaires/:survey/modules')
+@Controller('questionnaires/:questionnaireUuid/modules')
 export class StructureController {
-  constructor(private readonly structure: StructureService) {}
+  constructor(
+    private readonly structure: StructureService,
+    private readonly responses: ResponseService,
+  ) {}
 
   @Post()
-  createModule(@Param('survey') survey: string, @Body() dto: ModuleDto) {
-    return this.structure.createModule(survey, dto.name);
+  createModule(@Param('questionnaireUuid') uuid: string, @Body() dto: ModuleDto) {
+    return this.structure.createModule(uuid, dto.name);
   }
 
-  @Put(':module')
+  @Put(':moduleUuid')
   updateModule(
-    @Param('survey') survey: string,
-    @Param('module') module: string,
+    @Param('questionnaireUuid') uuid: string,
+    @Param('moduleUuid') module: string,
     @Body() dto: ModuleDto,
   ) {
-    return this.structure.updateModule(survey, module, dto.name);
+    return this.structure.updateModule(uuid, module, dto.name);
   }
 
-  @Delete(':module')
-  removeModule(@Param('survey') survey: string, @Param('module') module: string) {
-    return this.structure.removeModule(survey, module);
+  @Delete(':moduleUuid')
+  removeModule(@Param('questionnaireUuid') uuid: string, @Param('moduleUuid') module: string) {
+    return this.structure.removeModule(uuid, module);
   }
 
-  @Post(':module/questions')
+  @Post(':moduleUuid/questions')
   createQuestion(
-    @Param('survey') survey: string,
-    @Param('module') module: string,
+    @Param('questionnaireUuid') uuid: string,
+    @Param('moduleUuid') module: string,
     @Body() dto: QuestionDto,
   ) {
-    return this.structure.createQuestion(survey, module, dto);
+    return this.structure.createQuestion(uuid, module, dto);
   }
 
-  @Put(':module/questions/:question')
+  @Put(':moduleUuid/questions/:questionUuid')
   updateQuestion(
-    @Param('survey') survey: string,
-    @Param('module') module: string,
-    @Param('question') question: string,
+    @Param('questionnaireUuid') uuid: string,
+    @Param('moduleUuid') module: string,
+    @Param('questionUuid') question: string,
     @Body() dto: QuestionDto,
   ) {
-    return this.structure.updateQuestion(survey, module, question, dto);
+    return this.structure.updateQuestion(uuid, module, question, dto);
   }
 
-  @Delete(':module/questions/:question')
+  @Delete(':moduleUuid/questions/:questionUuid')
   removeQuestion(
-    @Param('survey') survey: string,
-    @Param('module') module: string,
-    @Param('question') question: string,
+    @Param('questionnaireUuid') uuid: string,
+    @Param('moduleUuid') module: string,
+    @Param('questionUuid') question: string,
   ) {
-    return this.structure.removeQuestion(survey, module, question);
+    return this.structure.removeQuestion(uuid, module, question);
+  }
+
+  @Post(':moduleUuid/questions/:questionUuid/answer')
+  answer(
+    @Param('questionnaireUuid') uuid: string,
+    @Param('moduleUuid') module: string,
+    @Param('questionUuid') question: string,
+    @Body() dto: SubmitResponseDto,
+  ) {
+    return this.responses.submit(uuid, module, question, dto);
   }
 }

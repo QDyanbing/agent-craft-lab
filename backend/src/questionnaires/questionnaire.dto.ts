@@ -2,13 +2,12 @@ import { Transform, Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsDefined,
   IsIn,
   IsInt,
   IsNotEmpty,
-  IsObject,
   IsString,
   Max,
-  MaxLength,
   Min,
   ValidateIf,
   type ValidationError,
@@ -31,7 +30,7 @@ export class QuestionnaireDto extends ModuleDto {
   description = '';
 }
 
-export const questionTypes = ['single', 'multiple', 'text', 'number'] as const;
+export const questionTypes = ['SINGLE', 'MULTIPLE', 'TEXT', 'NUMBER'] as const;
 export type QuestionType = (typeof questionTypes)[number];
 
 export class QuestionDto {
@@ -47,7 +46,7 @@ export class QuestionDto {
   @IsString()
   description = '';
 
-  @ValidateIf((q: QuestionDto) => q.type === 'single' || q.type === 'multiple')
+  @ValidateIf((q: QuestionDto) => q.type === 'SINGLE' || q.type === 'MULTIPLE')
   @Transform(({ value }) => (Array.isArray(value) ? value.map(trim) : value))
   @IsArray()
   @ArrayNotEmpty()
@@ -61,33 +60,23 @@ export class SearchDto {
   @IsString()
   keyword = '';
 
-  @ValidateIf((q: SearchDto) => q.pageSize !== undefined || q.pageNum !== undefined)
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(Number.MAX_SAFE_INTEGER)
-  pageNum?: number;
+  pageNum!: number;
 
-  @ValidateIf((q: SearchDto) => q.pageNum !== undefined || q.pageSize !== undefined)
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(Number.MAX_SAFE_INTEGER)
-  pageSize?: number;
+  pageSize = 10;
 }
 
 export class SubmitResponseDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(64)
-  requestId!: string;
-
-  @IsString()
-  revision!: string;
-
-  @Transform(({ obj }) => obj.answers)
-  @IsObject()
-  answers!: Record<string, unknown>;
+  @Transform(({ obj }) => obj.answer)
+  @IsDefined()
+  answer!: unknown;
 }
 
 export function invalidDto([error]: ValidationError[]) {
@@ -96,8 +85,6 @@ export function invalidDto([error]: ValidationError[]) {
     case 'pageSize':
       return new QuestionnaireError('pagination');
     case 'options':
-      if (Array.isArray(error.value) && error.value.length)
-        return new QuestionnaireError('required');
       return new QuestionnaireError('options');
     case 'type':
       return new QuestionnaireError('type');
