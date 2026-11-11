@@ -1,29 +1,39 @@
 import { Form, Input, Modal } from 'antd';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import useCreate from '../../hooks/useCreate';
+import useModify from '../../hooks/useModify';
 import useDataSet from '../../models/useDataSet';
 
-interface Props {
-  questionnaire?: API.IQuestionnaire;
-  loading: boolean;
-  onFinish: (values: API.IQuestionnaireSetParams) => Promise<void>;
-}
+export default () => {
+  const { questionnaire, onCancel } = useDataSet();
 
-export default ({ questionnaire, loading, onFinish }: Props) => {
-  const { onCancel } = useDataSet.getState();
+  const { loading: creating, onCreate } = useCreate();
+  const { loading: modifying, onModify } = useModify();
 
   const [form] = Form.useForm<API.IQuestionnaireSetParams>();
 
   const { t } = useTranslation('questionnaire');
 
+  const loading = creating || modifying;
+
+  const onFinish = (values: API.IQuestionnaireSetParams) =>
+    questionnaire ? onModify(values) : onCreate(values);
+
   useEffect(() => {
-    if (questionnaire) form.setFieldsValue({ name: questionnaire.name, description: questionnaire.description });
-    else form.resetFields();
+    if (questionnaire === undefined) return;
+
+    if (questionnaire) {
+      form.setFieldsValue({ name: questionnaire.name, description: questionnaire.description });
+    } else {
+      form.resetFields();
+    }
   }, [form, questionnaire]);
 
   return (
     <Modal
-      open
+      destroyOnHidden
+      open={questionnaire !== undefined}
       confirmLoading={loading}
       title={t(questionnaire ? 'form.editTitle' : 'action.create')}
       okText={t(questionnaire ? 'form.save' : 'form.submit')}

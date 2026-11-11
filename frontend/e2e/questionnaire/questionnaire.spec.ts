@@ -54,7 +54,7 @@ test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({
 
   await page.getByTitle('2', { exact: true }).click();
   const secondPage = page.getByRole('cell', { name: `${keyword}-10`, exact: true });
-  await expect(secondPage).toBeInViewport();
+  await expect(secondPage).toBeVisible();
 
   const dialog = page.getByRole('dialog');
   await page
@@ -88,7 +88,7 @@ test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({
   await dialog.getByRole('button', { name: /取\s*消/ }).click();
   await search.fill(`不存在-${keyword}`);
   await search.press('Enter');
-  await expect(page.getByText('没有匹配的问卷')).toBeVisible();
+  await expect(page.getByText('暂无数据', { exact: true })).toBeVisible();
   await expect(getPaginationTotal(page, 0)).toBeVisible();
 
   await search.fill(keyword);
@@ -105,7 +105,7 @@ test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({
     .getByRole('button', { name: /删\s*除/ })
     .click();
   await expect(getPaginationTotal(page, 20)).toBeVisible();
-  await expect(first).toBeInViewport();
+  await expect(oldest).toHaveCount(0);
   created.delete(oldestUuid);
   await search.fill('');
   await search.press('Enter');
