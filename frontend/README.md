@@ -35,4 +35,6 @@ ut run dev
 | `ut run test:e2e`        | 运行问卷浏览器测试         |
 | `ut run test:e2e:headed` | 在可见浏览器中运行功能测试 |
 
+浏览器测试自动启动独立的 Nest 后端，使用临时 SQLite 内存库。
+
 开发约定见 [AGENTS.md](AGENTS.md)。部署和代理配置见[部署说明](docs/17_deployment.md)。

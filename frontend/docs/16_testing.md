@@ -117,7 +117,7 @@
 
 浏览器功能测试覆盖问卷搜索与分页、重名提示、模块和题目维护、填写与提交答卷，以及语言切换和 404 返回列表。用例通过页面交互触发这些行为，并检查可见内容、控件状态、URL 和业务结果。
 
-测试运行时使用项目已有的 Vite 服务端 Mock 作为正常接口服务，不增加 MSW、Mock.js 或测试文件内的接口替身。测试代码禁止 Mock 页面、路由、Store、Hook、Service、Request 和 Fetch，也不得手写业务实体注入页面。测试数据通过真实 HTTP 接口准备和清理；当前 Case 要验证的行为只能由浏览器交互触发。
+Playwright 启动 Vite 和 Nest 后端，后端使用独立的 SQLite 内存库。测试数据通过真实 HTTP 接口准备和清理。每个用例通过浏览器交互触发待验证的行为。
 
 ## 覆盖率
 
@@ -149,7 +149,7 @@ Vitest 原生支持 V8 和 Istanbul 两种覆盖率 Provider。V8 不需要预�
 - 单元测试：Vitest 4，Node 环境。
 - 浏览器功能测试：Playwright，运行完整应用，默认 Chromium。
 - 覆盖率：Vitest V8 Coverage，单元测试范围内的 Statements、Branches、Functions 和 Lines 不低于 80%。
-- 接口服务：继续使用现有 Vite 服务端 Mock；测试代码内部禁止 Mock 被测链路。
+- 接口服务：Vite 将请求转发到测试专用的 Nest 后端。
 - 测试位置：纯单元测试贴近源码，浏览器功能测试独立放在根目录 `e2e`。
 
 ## 参考

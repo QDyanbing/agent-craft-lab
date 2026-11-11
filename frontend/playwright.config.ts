@@ -6,6 +6,8 @@ if (!Number.isInteger(E2E_PORT) || E2E_PORT < 1 || E2E_PORT > 65535) {
 }
 
 const BASE_URL = `http://127.0.0.1:${E2E_PORT}`;
+const API_PORT = process.env.E2E_API_PORT ?? '3001';
+const API_URL = `http://127.0.0.1:${API_PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -21,10 +23,20 @@ export default defineConfig({
       args: ['--start-maximized'],
     },
   },
-  webServer: {
-    command: `ut run dev:mock --host 127.0.0.1 --port ${E2E_PORT} --strictPort`,
-    url: BASE_URL,
-    reuseExistingServer: false,
-  },
+  webServer: [
+    {
+      cwd: '../backend',
+      command: 'npm run build && npm start',
+      env: { HOST: '127.0.0.1', PORT: API_PORT, QUESTIONNAIRE_DB: ':memory:' },
+      url: `${API_URL}/api/health`,
+      reuseExistingServer: false,
+    },
+    {
+      command: `ut run dev --host 127.0.0.1 --port ${E2E_PORT} --strictPort`,
+      env: { QUESTIONNAIRE_API_TARGET: API_URL, VITE_API_BASE_URL: '' },
+      url: BASE_URL,
+      reuseExistingServer: false,
+    },
+  ],
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
 });
