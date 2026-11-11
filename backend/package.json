@@ -5,12 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "build": "tsc -p tsconfig.json"
   },
   "engines": {
     "node": ">=24"
   },
   "dependencies": {
-    "fastify": "^5.12.8"
+    "@nestjs/common": "^12.4.2",
+    "@nestjs/core": "^12.4.2",
+    "@nestjs/platform-fastify": "^12.4.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "fastify": "^5.12.8",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "tsc-watch": "^7.2.1",
+    "typescript": "~6.0.3"
   }
 }
