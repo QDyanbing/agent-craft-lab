@@ -2,6 +2,24 @@
 
 [第一篇：什么是 Agent](docs/articles/01-what-is-agent.md)
 
+## 本地启动问卷项目
+
+使用 Node.js 24。首次使用时，在仓库根目录安装依赖。
+
+```sh
+npm ci
+npm --prefix backend ci
+(cd frontend && ut install)
+```
+
+日常开发只需在根目录运行一个命令。
+
+```sh
+npm start
+```
+
+前端和后端的日志显示在同一个终端。按 `Ctrl+C` 同时停止两个服务。[打开本地问卷列表](http://localhost:8000/questionnaires)
+
 ## 1. 产品分析
 
 ### 1.1 产品是什么

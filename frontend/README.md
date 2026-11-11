@@ -4,21 +4,7 @@
 
 ## 本地开发
 
-使用 Node.js 24。在仓库根目录打开一个终端，启动后端：
-
-```bash
-cd backend
-npm ci
-npm run dev
-```
-
-在另一个终端从仓库根目录启动前端：
-
-```bash
-cd frontend
-ut install
-ut run dev
-```
+在仓库根目录运行 `npm start` 同时启动前后端。首次使用见[本地启动说明](../README.md#本地启动问卷项目)。
 
 打开 [本地问卷列表](http://localhost:8000/questionnaires)。Vite 默认把问卷请求转发到端口 3000，问卷和答卷保存在 `backend/data/questionnaires.sqlite`。
 
