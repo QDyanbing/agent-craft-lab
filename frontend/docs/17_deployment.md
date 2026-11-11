@@ -59,7 +59,7 @@ cp .env.example .env.local
 
 | 配置 | 请求结果 | 适用场景 |
 | --- | --- | --- |
-| 留空 | `/api/...` | 本地 Mock 或由 Nginx、网关代理的同域部署 |
+| 留空 | `/api/...` | 本地 Vite 代理或由 Nginx、网关代理的同域部署 |
 | `https://api.example.com` | `https://api.example.com/api/...` | 前后端跨域部署 |
 | `/backend` | `/backend/api/...` | 由网关使用路径前缀转发 |
 
@@ -69,11 +69,7 @@ Service 传给 Request 的接口地址统一以 `/` 开头。
 
 同域部署应保持 `VITE_API_BASE_URL` 为空。只有明确需要前后端跨域时才配置完整后端地址，并由后端允许前端站点的 Origin、HTTP 方法以及 `Authorization`、`Content-Type` 请求头。
 
-本地 Mock 同样保持 `VITE_API_BASE_URL` 为空，然后执行：
-
-```bash
-ut run dev:mock
-```
+本地开发时启动 Nest 后端和 Vite，保持 `VITE_API_BASE_URL` 为空。Vite 默认把问卷请求转发到 `http://127.0.0.1:3000`，可通过 `QUESTIONNAIRE_API_TARGET` 指定其他后端地址。
 
 ## 接口响应约定
 

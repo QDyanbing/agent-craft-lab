@@ -6,14 +6,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/utils/**/*.ts', 'src/i18n/languages.ts'],
-      exclude: [
-        '**/*.d.ts',
-        'src/**/locale/**',
-        'src/main.tsx',
-        'config/**',
-        'mock/**',
-        'plugins/**',
-      ],
+      exclude: ['**/*.d.ts', 'src/**/locale/**', 'src/main.tsx', 'config/**'],
       thresholds: {
         branches: 80,
         functions: 80,

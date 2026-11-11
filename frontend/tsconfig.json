@@ -20,8 +20,6 @@
   "include": [
     "config",
     "e2e",
-    "mock",
-    "plugins",
     "src",
     "playwright.config.ts",
     "playwright.headed.config.ts",

@@ -24,7 +24,7 @@
 - 请求底层：原生 Fetch，通过 `src/utils/request.ts` 统一封装。
 - 日期：Day.js。
 - 国际化：i18next + react-i18next。
-- Mock：Vite 服务端插件，不使用浏览器 Service Worker。
+- 开发接口：Vite 将问卷请求代理到本地 Nest 后端。
 - 不得在未完成新选型前引入同类替代方案。
 
 ## 3. 业务代码分层
@@ -75,7 +75,6 @@
 
 - `config`：路由等工程配置。
 - `plugins`：Vite 插件，每个插件一个文件或一个独立目录。
-- `mock`：Mock 接口，文件名与 Service 业务领域一致。
 - `docs`：独立技术选型文档和项目任务清单。
 - 工程配置不得放入 `src`。
 
@@ -100,7 +99,7 @@ src/
 
 - 不得新增笼统的 `common`、`shared`、`helpers`、`misc`、`styles` 目录。
 - 公共能力必须按真实职责进入 `components`、`hooks`、`models`、`services` 或 `utils`。
-- `config`、`mock`、`plugins` 不得移动到 `src`。
+- `config`、`plugins` 不得移动到 `src`。
 
 ## 5. 服务层规范
 
@@ -771,15 +770,10 @@ JSX Props 固定按以下优先级排列：
 - 新增公共工具前必须至少满足一项：消除跨模块真实重复、隔离可替换底层、统一全局行为。
 - 当前页面私有逻辑不得因为“以后可能复用”提前移入公共目录。
 
-## 22. Mock
+## 22. 后端联调
 
-- Mock 文件位于根目录 `mock`，文件名与 Service 领域一致。
-- Mock 路径和 HTTP 方法必须与 Service 完全一致。
-- Mock 返回结构必须符合 `API.SuccessResult` 或错误响应结构。
-- Mock 是 Vite 服务端行为，不得依赖浏览器刷新保存状态。
-- Mock 数据在开发服务器生命周期内可以保持，浏览器刷新不得重置服务端内存数据。
-- 不得引入 MSW、Mock.js 等第二套 Mock 机制。
-- Mock 聚合由 Vite 插件自动完成，不手工维护模块列表。
+- 日常开发连接本地 Nest 后端，问卷和答卷保存在 SQLite 文件中。
+- 浏览器功能测试调用独立的 Nest 后端，使用测试专用数据库。
 
 ## 23. 文档
 
@@ -818,7 +812,7 @@ JSX Props 固定按以下优先级排列：
 - 禁止通过 `vi.mock`、`vi.spyOn`、模块替换、Fetch Stub、路由替身或 History 替身隔离页面运行边界；页面功能测试不得存在任何 Mock 行为。
 - 禁止通过 Zustand `setState`、Hook 返回值或组件 Props 向被测页面直接注入业务状态。
 - 禁止在测试文件中手写 `API.User`、`API.Role` 等业务实体作为 Table 行、详情或表单回显数据，也不得通过 `mockResolvedValue`、`mockImplementation` 注入接口结果。
-- 固定基础数据必须来自项目正常 Mock 服务的真实数据存储或真实后端；测试专属数据必须通过 Playwright `APIRequestContext` 调用真实 HTTP 接口创建，并在全部浏览器测试完成后通过真实 HTTP 接口清理。
+- 固定基础数据必须来自测试后端；测试专属数据必须通过 Playwright `APIRequestContext` 调用真实 HTTP 接口创建，并在全部浏览器测试完成后通过真实 HTTP 接口清理。
 - Setup 和 Cleanup 只能准备、查询和回收测试数据，不得替代当前 Case 要验证的页面操作；被测功能的请求必须由浏览器交互触发。
 - 每个 Case 必须使用 Playwright 提供的独立 `page` Fixture，不得在 `beforeAll` 中创建并跨 Case 共享 Page 或 BrowserContext；复用浏览器进程不得以牺牲 Case 隔离为代价。
 - 所有 `e2e/**/*.spec.ts` 必须从 `e2e/fixtures.ts` 引入 `test` 和 `expect`，不得直接从 `@playwright/test` 引入；正式测试仍由该 Fixture 为每个 Case 提供独立 Page。

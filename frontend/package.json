@@ -19,7 +19,6 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
-    "dev:mock": "vite --mode mock",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "hooks:setup": "crucialy setup",

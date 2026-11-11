@@ -22,8 +22,6 @@ ut run dev
 
 打开 [本地问卷列表](http://localhost:8000/questionnaires)。Vite 默认把问卷请求转发到端口 3000，问卷和答卷保存在 `backend/data/questionnaires.sqlite`。
 
-需要独立演示前端时，在 `frontend` 目录执行 `ut run dev:mock`。此模式使用内存数据库，重启开发服务会清空数据。
-
 ## 开发检查
 
 | 命令                     | 用途                       |
