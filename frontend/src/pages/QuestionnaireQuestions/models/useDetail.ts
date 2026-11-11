@@ -1,10 +1,10 @@
-import { getDetail } from '@/services/questionnaire';
+import { getDetail } from '@/services/questionnaire/questionnaire';
 import { create } from 'zustand';
 import usePage from './usePage';
 
 interface Store {
   loading: boolean;
-  data?: API.QuestionnaireDetail;
+  data?: API.IQuestionnaireDetail;
   onRefresh: () => Promise<void>;
 }
 

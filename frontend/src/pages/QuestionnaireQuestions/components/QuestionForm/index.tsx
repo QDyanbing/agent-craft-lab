@@ -5,19 +5,19 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useCreate from '../../hooks/question/useCreate';
 import useModify from '../../hooks/question/useModify';
-import useEditor from '../../models/useEditor';
+import useQuestionSet from '../../models/useQuestionSet';
 
 interface FormValues {
-  type: { value: API.QuestionnaireQuestionType; label: string };
+  type: { value: API.TQuestionnaireQuestionType; label: string };
   title: string;
   description?: string;
   options?: string[];
 }
 
-const QUESTION_TYPES: API.QuestionnaireQuestionType[] = ['single', 'multiple', 'text', 'number'];
+const QUESTION_TYPES: API.TQuestionnaireQuestionType[] = ['SINGLE', 'MULTIPLE', 'TEXT', 'NUMBER'];
 
-export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
-  const { onClose } = useEditor.getState();
+export default ({ question }: { question?: API.IQuestionnaireQuestion }) => {
+  const { onCancel } = useQuestionSet.getState();
 
   const { loading: creating, onCreate } = useCreate();
   const { loading: modifying, onModify } = useModify();
@@ -28,12 +28,12 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
   const { t } = useTranslation('questionnaireQuestions');
 
   const loading = creating || modifying;
-  const type = selectedType?.value ?? question?.type ?? 'single';
-  const hasOptions = type === 'single' || type === 'multiple';
+  const type = selectedType?.value ?? question?.type ?? 'SINGLE';
+  const hasOptions = type === 'SINGLE' || type === 'MULTIPLE';
 
   const onFinish = ({ type: { value }, title, description, options }: FormValues) => {
-    const params: API.QuestionnaireQuestionSetParams =
-      value === 'single' || value === 'multiple'
+    const params: API.IQuestionnaireQuestionSetParams =
+      value === 'SINGLE' || value === 'MULTIPLE'
         ? { type: value, title, description, options: options ?? [] }
         : { type: value, title, description };
 
@@ -46,7 +46,7 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
       return;
     }
     form.setFieldsValue({
-      type: { value: question.type, label: t(question.type) },
+      type: { value: question.type, label: t(question.type.toLowerCase()) },
       title: question.title,
       description: question.description,
       options: question.options.length ? question.options : ['', ''],
@@ -61,13 +61,13 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
       okText={t('save')}
       onOk={() => form.submit()}
       onCancel={() => {
-        if (!loading) onClose();
+        if (!loading) onCancel();
       }}
     >
       <Form
         layout="vertical"
         form={form}
-        initialValues={{ type: { value: 'single', label: t('single') }, options: ['', ''] }}
+        initialValues={{ type: { value: 'SINGLE', label: t('single') }, options: ['', ''] }}
         disabled={loading}
         onFinish={onFinish}
       >
@@ -75,7 +75,7 @@ export default ({ question }: { question?: API.QuestionnaireQuestion }) => {
           <Select
             labelInValue
             virtual={false}
-            options={QUESTION_TYPES.map((value) => ({ value, label: t(value) }))}
+            options={QUESTION_TYPES.map((value) => ({ value, label: t(value.toLowerCase()) }))}
           />
         </Form.Item>
         <Form.Item

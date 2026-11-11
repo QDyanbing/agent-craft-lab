@@ -1,48 +1,38 @@
-import { RequestError } from '@/utils/request';
 import { Form, Input, Modal } from 'antd';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import useDialog from '../../models/useDialog';
+import useDataSet from '../../models/useDataSet';
 
 interface Props {
-  survey?: API.QuestionnaireSummary;
+  questionnaire?: API.IQuestionnaire;
   loading: boolean;
-  onFinish: (values: API.QuestionnaireSetParams) => Promise<void>;
+  onFinish: (values: API.IQuestionnaireSetParams) => Promise<void>;
 }
 
-export default ({ survey, loading, onFinish }: Props) => {
-  const { onClose } = useDialog.getState();
+export default ({ questionnaire, loading, onFinish }: Props) => {
+  const { onCancel } = useDataSet.getState();
 
-  const [form] = Form.useForm<API.QuestionnaireSetParams>();
+  const [form] = Form.useForm<API.IQuestionnaireSetParams>();
 
   const { t } = useTranslation('questionnaire');
 
-  const onSave = async (values: API.QuestionnaireSetParams) => {
-    try {
-      await onFinish(values);
-    } catch (error) {
-      if (!(error instanceof RequestError)) throw error;
-      form.setFields([{ name: 'name', errors: [error.message] }]);
-    }
-  };
-
   useEffect(() => {
-    if (survey) form.setFieldsValue({ name: survey.name, description: survey.description });
+    if (questionnaire) form.setFieldsValue({ name: questionnaire.name, description: questionnaire.description });
     else form.resetFields();
-  }, [form, survey]);
+  }, [form, questionnaire]);
 
   return (
     <Modal
       open
       confirmLoading={loading}
-      title={t(survey ? 'form.editTitle' : 'action.create')}
-      okText={t(survey ? 'form.save' : 'form.submit')}
+      title={t(questionnaire ? 'form.editTitle' : 'action.create')}
+      okText={t(questionnaire ? 'form.save' : 'form.submit')}
       onOk={() => form.submit()}
       onCancel={() => {
-        if (!loading) onClose();
+        if (!loading) onCancel();
       }}
     >
-      <Form layout="vertical" form={form} disabled={loading} onFinish={onSave}>
+      <Form layout="vertical" form={form} disabled={loading} onFinish={onFinish}>
         <Form.Item
           name="name"
           label={t('column.name')}

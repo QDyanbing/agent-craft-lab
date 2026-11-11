@@ -1,67 +1,35 @@
-import { Button, Card, Checkbox, Flex, Form, Input, InputNumber, Radio, Typography } from 'antd';
-import { useState } from 'react';
+import { Card, Checkbox, Flex, Form, Input, InputNumber, Radio, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import styles from './index.module.less';
 
-type Answers = API.QuestionnaireResponseSetParams['answers'];
+type Answer = number | number[] | string;
 
 interface Props {
-  survey: API.QuestionnaireDetail;
-  loading: boolean;
-  onCreate: (params: API.QuestionnaireResponseSetParams) => Promise<void>;
+  questionnaire: API.IQuestionnaireDetail;
+  onAnswer: (module: string, question: string, answer: Answer) => Promise<void>;
 }
 
-const renderInput = (question: API.QuestionnaireQuestion) => {
-  switch (question.type) {
-    case 'text':
-      return <Input.TextArea rows={3} />;
-    case 'number':
-      return <InputNumber />;
-    case 'single':
-      return (
-        <Radio.Group
-          orientation="vertical"
-          options={question.options.map((label, value) => ({ label, value }))}
-        />
-      );
-    case 'multiple':
-      return (
-        <Checkbox.Group
-          options={question.options.map((label, value) => ({ label, value }))}
-          className={styles.choices}
-        />
-      );
-  }
-};
+const savedAnswers = (questionnaire: API.IQuestionnaireDetail) =>
+  Object.fromEntries(
+    questionnaire.modules.flatMap((module) =>
+      module.questions.flatMap((question) =>
+        question.answer == null ? [] : [[question.uuid, question.answer]],
+      ),
+    ),
+  );
 
-export default ({ survey, loading, onCreate }: Props) => {
-  const [form] = Form.useForm<Answers>();
-
+export default ({ questionnaire, onAnswer }: Props) => {
+  const [form] = Form.useForm<Record<string, Answer>>();
   const { t } = useTranslation('questionnaireAnswer');
-
-  const [requestId] = useState(() => crypto.getRandomValues(new Uint32Array(4)).join('-'));
-
-  const onFinish = (values: Answers) => {
-    const answers = Object.fromEntries(
-      Object.entries(values).filter(([, value]) => {
-        if (typeof value === 'string') return value.trim().length > 0;
-        if (Array.isArray(value)) return value.length > 0;
-        return typeof value === 'number';
-      }),
-    );
-
-    return onCreate({ requestId, revision: survey.revision, answers });
-  };
 
   return (
     <Form
       layout="vertical"
       form={form}
-      disabled={loading}
       className={styles.answerForm}
-      onFinish={onFinish}
+      initialValues={savedAnswers(questionnaire)}
     >
-      {survey.modules.map(
+      {questionnaire.modules.map(
         (module, moduleIndex) =>
           module.questions.length > 0 && (
             <Card key={module.uuid}>
@@ -83,26 +51,49 @@ export default ({ survey, loading, onCreate }: Props) => {
                       </Flex>
                     }
                   >
-                    {renderInput(question)}
+                    {question.type === 'TEXT' ? (
+                      <Input.TextArea
+                        rows={3}
+                        onBlur={(event) => {
+                          const value = event.currentTarget.value;
+                          if (value.trim()) void onAnswer(module.uuid, question.uuid, value);
+                        }}
+                      />
+                    ) : question.type === 'NUMBER' ? (
+                      <InputNumber
+                        onBlur={() => {
+                          const value = form.getFieldValue(question.uuid);
+                          if (typeof value === 'number' && Number.isFinite(value)) {
+                            void onAnswer(module.uuid, question.uuid, value);
+                          }
+                        }}
+                      />
+                    ) : question.type === 'SINGLE' ? (
+                      <Radio.Group
+                        orientation="vertical"
+                        options={question.options.map((label, value) => ({ label, value }))}
+                        onChange={(event) => {
+                          void onAnswer(module.uuid, question.uuid, event.target.value);
+                        }}
+                      />
+                    ) : (
+                      <Checkbox.Group
+                        options={question.options.map((label, value) => ({ label, value }))}
+                        className={styles.choices}
+                        onChange={(value) => {
+                          const selected = value.filter(
+                            (item): item is number => typeof item === 'number',
+                          );
+                          if (selected.length) void onAnswer(module.uuid, question.uuid, selected);
+                        }}
+                      />
+                    )}
                   </Form.Item>
                 ))}
               </Flex>
             </Card>
           ),
       )}
-      <Flex justify="end">
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={loading}
-          onClick={(event) => {
-            event.preventDefault();
-            form.submit();
-          }}
-        >
-          {t('submit')}
-        </Button>
-      </Flex>
     </Form>
   );
 };

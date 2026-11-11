@@ -12,7 +12,7 @@ import useDelete from './hooks/useDelete';
 import useModify from './hooks/useModify';
 import styles from './index.module.less';
 import useData from './models/useData';
-import useDialog from './models/useDialog';
+import useDataSet from './models/useDataSet';
 import usePage from './models/usePage';
 
 const ACTION_COLUMN_WIDTH = {
@@ -23,7 +23,10 @@ const ACTION_COLUMN_WIDTH = {
 export default () => {
   const { mount, unmount, params, onPaginationChange } = usePage();
   const { loading, data, total } = useData();
-  const { dialog, onOpen } = useDialog();
+  const {
+    questionnaire: editing,
+    onModify: onModifyQuestionnaire,
+  } = useDataSet();
 
   const { loading: createLoading, onCreate } = useCreate();
   const { loading: modifyLoading, onModify } = useModify();
@@ -34,20 +37,20 @@ export default () => {
 
   const { t } = useTranslation('questionnaire');
 
-  const columns: TableColumnsType<API.QuestionnaireSummary> = [
+  const columns: TableColumnsType<API.IQuestionnaire> = [
     {
       title: t('column.name'),
       dataIndex: 'name',
-      render: (name: string, survey) => (
+      render: (name: string, questionnaire) => (
         <Flex vertical className={styles.file}>
           <Typography.Text strong>{name}</Typography.Text>
           {screens.sm === false && (
             <>
-              {survey.description && (
-                <Typography.Text type="secondary">{survey.description}</Typography.Text>
+              {questionnaire.description && (
+                <Typography.Text type="secondary">{questionnaire.description}</Typography.Text>
               )}
               <Typography.Text type="secondary" className={styles.structure}>
-                {t('structure', { modules: survey.moduleCount, questions: survey.questionCount })}
+                {t('structure', { modules: questionnaire.moduleCount, questions: questionnaire.questionCount })}
               </Typography.Text>
             </>
           )}
@@ -83,9 +86,9 @@ export default () => {
       title: t('column.action'),
       dataIndex: 'uuid',
       align: 'left',
-      render: (uuid: string, survey) => (
+      render: (uuid: string, questionnaire) => (
         <Flex wrap gap="medium" align="center">
-          <Button type="link" className={styles.action} onClick={() => onOpen(survey)}>
+          <Button type="link" className={styles.action} onClick={() => onModifyQuestionnaire(questionnaire)}>
             {t('action.modify')}
           </Button>
           <Button
@@ -97,16 +100,16 @@ export default () => {
           </Button>
           <Button
             type="link"
-            disabled={!survey.questionCount}
+            disabled={!questionnaire.questionCount}
             aria-label={t('action.answer')}
-            title={t(survey.questionCount ? 'action.answer' : 'message.noQuestions')}
+            title={t(questionnaire.questionCount ? 'action.answer' : 'message.noQuestions')}
             className={styles.action}
             onClick={() => onHistoryChange('/questionnaires/answer', { uuid })}
           >
             {t('action.answer')}
           </Button>
           <Popconfirm
-            title={t('action.deleteConfirm', { name: survey.name })}
+            title={t('action.deleteConfirm', { name: questionnaire.name })}
             description={t('action.deleteDescription')}
             okText={t('action.delete')}
             okButtonProps={{ danger: true }}
@@ -157,7 +160,7 @@ export default () => {
         </Flex>
         <SearchBar />
         <Flex vertical className={styles.body}>
-          <Table<API.QuestionnaireSummary>
+          <Table<API.IQuestionnaire>
             pagination={false}
             rowKey="uuid"
             ref={table}
@@ -193,11 +196,11 @@ export default () => {
           onChange={onPaginationChange}
         />
       </Flex>
-      {dialog && (
+      {editing !== undefined && (
         <QuestionnaireForm
-          survey={dialog.survey}
+          questionnaire={editing ?? undefined}
           loading={createLoading || modifyLoading}
-          onFinish={dialog.survey ? onModify : onCreate}
+          onFinish={editing ? onModify : onCreate}
         />
       )}
     </Spin>

@@ -1,5 +1,4 @@
-import useRequestAction from '@/hooks/useRequestAction';
-import { setCreate } from '@/services/questionnaire';
+import { setCreate } from '@/services/questionnaire/questionnaire';
 import { onHistoryChange } from '@/utils/history';
 import { useRequest } from 'ahooks';
 import { App } from 'antd';
@@ -12,13 +11,13 @@ export default () => {
 
   const { loading, runAsync } = useRequest(setCreate, { manual: true });
 
-  const onCreate = useRequestAction(async (params: API.QuestionnaireSetParams) => {
+  const onCreate = async (params: API.IQuestionnaireSetParams) => {
     const result = await runAsync(params);
     if (!result) return;
 
     message.success(t('message.createSuccess'));
     onHistoryChange('/questionnaires/questions', { uuid: result.data.uuid });
-  });
+  };
 
   return { loading, onCreate };
 };

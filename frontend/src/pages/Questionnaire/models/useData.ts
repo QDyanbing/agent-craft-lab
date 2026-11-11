@@ -1,17 +1,17 @@
-import { getSearch } from '@/services/questionnaire';
+import { getSearch } from '@/services/questionnaire/questionnaire';
 import { create } from 'zustand';
 import usePage from './usePage';
 
 interface Store {
   loading: boolean;
-  data: API.QuestionnaireSummary[];
+  data: API.IQuestionnaire[];
   total: number;
   onRefresh: () => void;
 }
 
 export default create<Store>((set) => {
   const loading = false;
-  const data: API.QuestionnaireSummary[] = [];
+  const data: API.IQuestionnaire[] = [];
   const total = 0;
 
   const getData = async () => {

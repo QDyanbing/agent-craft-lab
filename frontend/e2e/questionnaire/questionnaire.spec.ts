@@ -75,7 +75,7 @@ test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({
   await page.getByRole('button', { name: '创建问卷' }).click();
   await dialog.getByLabel('文件名称').fill(` ${keyword}-0 `);
   await dialog.getByRole('button', { name: /创\s*建/ }).click();
-  await expect(dialog.getByText('问卷名称已存在，请换一个名称')).toBeVisible();
+  await expect(page.getByText('问卷名称已存在，请换一个名称')).toBeVisible();
   await dialog.getByRole('button', { name: /取\s*消/ }).click();
   await page
     .getByRole('row')
@@ -84,7 +84,7 @@ test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({
     .click();
   await dialog.getByLabel('文件名称').fill(`${keyword}-0`);
   await dialog.getByRole('button', { name: /保\s*存/ }).click();
-  await expect(dialog.getByText('问卷名称已存在，请换一个名称')).toBeVisible();
+  await expect(page.getByText('问卷名称已存在，请换一个名称')).toBeVisible();
   await dialog.getByRole('button', { name: /取\s*消/ }).click();
   await search.fill(`不存在-${keyword}`);
   await search.press('Enter');
@@ -130,7 +130,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   await dialog.getByRole('button', { name: /创\s*建/ }).click();
   const response = await createResponse;
   expect(response.status()).toBe(201);
-  const result: API.SuccessResult<API.QuestionnaireCreated> = await response.json();
+  const result: API.SuccessResult<Pick<API.IQuestionnaire, 'uuid'>> = await response.json();
   expect(result.success).toBe(true);
   created.add(result.data.uuid);
   await expect(page).toHaveURL(`/questionnaires/questions?uuid=${result.data.uuid}`);
@@ -164,7 +164,9 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   const lastQuestion = course.getByRole('group', { name: '数字题', exact: true });
   for (const type of ['单选', '多选', '文本', '数字']) {
     if (type === '数字') {
-      await moduleEntry.getByRole('img', { name: 'caret-down' }).click();
+      if ((await moduleEntry.getAttribute('aria-expanded')) !== 'false') {
+        await moduleEntry.getByRole('img', { name: 'caret-down' }).click();
+      }
       await expect(moduleEntry).toHaveAttribute('aria-expanded', 'false');
       await expect(questionEntry).toHaveCount(0);
       await expect(course.getByRole('group')).toHaveCount(3);
@@ -184,9 +186,8 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
     await save.click();
     await expect(page.getByRole('group', { name: `${type}题` })).toContainText(`${type}说明`);
   }
-  await expect(moduleEntry).toHaveAttribute('aria-expanded', 'true');
-  await expect(lastEntry).toHaveAttribute('aria-selected', 'true');
-  await expect(lastEntry).toBeInViewport({ ratio: 1 });
+  await expect(moduleEntry).toHaveAttribute('aria-expanded', 'false');
+  await expect(lastEntry).toHaveCount(0);
   await expect(lastQuestion).toHaveAttribute('id', new URL(page.url()).hash.slice(1));
 
   await page.setViewportSize({ width: 840, height: 380 });
@@ -248,11 +249,22 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   await expect(row.getByRole('cell')).toHaveText([newName, '', '2', '3', actions]);
   await row.getByRole('button', { name: '答题' }).click();
   await expect(page.getByRole('heading', { name: newName, exact: true })).toBeVisible();
+  const answerSaved = () =>
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/answer'),
+    );
+  const multipleSaved = answerSaved();
   await page.getByRole('checkbox', { name: '线上' }).check();
+  expect((await multipleSaved).status()).toBe(201);
   await page.getByRole('textbox', { name: /文本题/ }).fill('很有帮助');
+  const textSaved = answerSaved();
   await page.getByRole('spinbutton', { name: /数字题/ }).fill('0');
-  await page.getByRole('button', { name: '提交答卷' }).click();
-  await expect(page.getByText('答卷已提交')).toBeVisible();
+  expect((await textSaved).status()).toBe(201);
+  const numberSaved = answerSaved();
+  await page.getByRole('heading', { name: newName, exact: true }).click();
+  expect((await numberSaved).status()).toBe(201);
+  await page.getByRole('menuitem', { name: '问卷列表' }).click();
   await expect(row).toBeVisible();
   await row.getByRole('button', { name: /改\s*题/ }).click();
   await outline.getByRole('treeitem', { name: /课程评价/ }).click();

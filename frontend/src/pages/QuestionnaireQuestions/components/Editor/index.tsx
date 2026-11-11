@@ -5,7 +5,8 @@ import { useLocation } from '@tanstack/react-router';
 import { Empty, Flex, Grid, Typography } from 'antd';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import useEditor from '../../models/useEditor';
+import useModuleSet from '../../models/useModuleSet';
+import useQuestionSet from '../../models/useQuestionSet';
 import ModuleForm from '../ModuleForm';
 import ModuleSection from '../ModuleSection';
 import Outline from '../Outline';
@@ -13,7 +14,7 @@ import QuestionForm from '../QuestionForm';
 import styles from './index.module.less';
 
 interface Props {
-  survey: API.Questionnaire;
+  questionnaire: API.IQuestionnaireDetail;
   onDeleteModule: (moduleUuid: string) => Promise<void>;
   onDeleteQuestion: (moduleUuid: string, questionUuid: string) => Promise<void>;
 }
@@ -21,8 +22,9 @@ interface Props {
 const scrollToEntry = (uuid: string) =>
   document.getElementById(uuid)?.scrollIntoView({ block: 'start', inline: 'nearest' });
 
-export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
-  const { dialog, onOpen, onModuleExpandChange } = useEditor();
+export default ({ questionnaire, onDeleteModule, onDeleteQuestion }: Props) => {
+  const { module: editingModule, onCreate } = useModuleSet();
+  const { question: editingQuestion } = useQuestionSet();
 
   const hash = useLocation({ select: (location) => location.hash });
   const screens = Grid.useBreakpoint();
@@ -30,18 +32,12 @@ export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
   const { t } = useTranslation('questionnaireQuestions');
 
   const moduleUuid = hash
-    ? survey.modules.find(
+    ? questionnaire.modules.find(
         (module) =>
           module.uuid === hash || module.questions.some((question) => question.uuid === hash),
       )?.uuid
     : undefined;
   const selectedUuid = moduleUuid ? hash : undefined;
-  const editingModule = survey.modules.find((module) => module.uuid === dialog?.moduleUuid);
-  const editingQuestion =
-    dialog?.kind === 'question'
-      ? editingModule?.questions.find((question) => question.uuid === dialog.questionUuid)
-      : undefined;
-
   const onSelect = (uuid: string) => {
     if (uuid === hash) scrollToEntry(uuid);
     else onHistoryAnchorChange(uuid);
@@ -53,25 +49,24 @@ export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
       onHistoryAnchorChange('');
       return;
     }
-    if (moduleUuid !== hash) onModuleExpandChange(moduleUuid, true);
     scrollToEntry(hash);
-  }, [hash, moduleUuid, onModuleExpandChange]);
+  }, [hash, moduleUuid]);
 
   return (
     <Flex vertical gap="middle" className={styles.editor}>
       <Flex vertical gap="small" component="header" className={styles.header}>
-        <Typography.Title level={1} className={styles.surveyTitle}>
-          {survey.name}
+        <Typography.Title level={1} className={styles.questionnaireTitle}>
+          {questionnaire.name}
         </Typography.Title>
-        {survey.description && (
-          <Typography.Text type="secondary">{survey.description}</Typography.Text>
+        {questionnaire.description && (
+          <Typography.Text type="secondary">{questionnaire.description}</Typography.Text>
         )}
       </Flex>
-      {survey.modules.length > 0 ? (
+      {questionnaire.modules.length > 0 ? (
         <Flex vertical={!screens.md} data-compact={!screens.md} className={styles.workspace}>
-          <Outline modules={survey.modules} selectedUuid={selectedUuid} onSelect={onSelect} />
+          <Outline modules={questionnaire.modules} selectedUuid={selectedUuid} onSelect={onSelect} />
           <Flex vertical gap="large" className={styles.document}>
-            {survey.modules.map((module, index) => (
+            {questionnaire.modules.map((module, index) => (
               <ModuleSection
                 key={module.uuid}
                 module={module}
@@ -95,12 +90,12 @@ export default ({ survey, onDeleteModule, onDeleteQuestion }: Props) => {
             }
             classNames={{ image: styles.emptyIcon }}
           >
-            <AddButton label={t('newModule')} onClick={() => onOpen({ kind: 'module' })} />
+            <AddButton label={t('newModule')} onClick={onCreate} />
           </Empty>
         </Flex>
       )}
-      {dialog?.kind === 'module' && <ModuleForm module={editingModule} />}
-      {dialog?.kind === 'question' && <QuestionForm question={editingQuestion} />}
+      {editingModule !== undefined && <ModuleForm module={editingModule ?? undefined} />}
+      {editingQuestion !== undefined && <QuestionForm question={editingQuestion ?? undefined} />}
     </Flex>
   );
 };

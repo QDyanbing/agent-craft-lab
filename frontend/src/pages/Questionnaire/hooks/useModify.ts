@@ -1,14 +1,13 @@
-import useRequestAction from '@/hooks/useRequestAction';
-import { setModify } from '@/services/questionnaire';
+import { setModify } from '@/services/questionnaire/questionnaire';
 import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import useData from '../models/useData';
-import useDialog from '../models/useDialog';
+import useDataSet from '../models/useDataSet';
 
 export default () => {
   const { onRefresh } = useData.getState();
-  const { onClose } = useDialog.getState();
+  const { onCancel } = useDataSet.getState();
 
   const { t } = useTranslation('questionnaire');
 
@@ -16,17 +15,17 @@ export default () => {
 
   const { loading, runAsync } = useRequest(setModify, { manual: true });
 
-  const onModify = useRequestAction(async (values: API.QuestionnaireSetParams) => {
-    const { dialog } = useDialog.getState();
-    if (!dialog?.survey) return;
+  const onModify = async (values: API.IQuestionnaireSetParams) => {
+    const { questionnaire } = useDataSet.getState();
+    if (!questionnaire) return;
 
-    const result = await runAsync(dialog.survey.uuid, values);
+    const result = await runAsync(questionnaire.uuid, values);
     if (!result) return;
 
     message.success(t('message.modifySuccess'));
-    onClose();
+    onCancel();
     onRefresh();
-  });
+  };
 
   return { loading, onModify };
 };

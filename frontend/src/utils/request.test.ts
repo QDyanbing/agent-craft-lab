@@ -40,25 +40,19 @@ describe('统一请求', () => {
     vi.unstubAllGlobals();
   });
 
-  test('字段错误交给表单，其他错误仍走全局提示', async () => {
-    const options = { localErrorKeys: ['questionnaire:errors.duplicateName'] };
+  test('重名等业务错误走全局提示', async () => {
     fetchMock.mockResolvedValueOnce(
       response(
-        { success: false, errorKey: options.localErrorKeys[0], errorMessage: '名称已存在' },
+        {
+          success: false,
+          errorKey: 'questionnaire:errors.duplicateName',
+          errorMessage: '名称已存在',
+        },
         409,
       ),
     );
-    await expect(Request.post('/api/test', {}, options)).rejects.toMatchObject({
-      status: 409,
-      message: '名称已存在',
-    });
-    expect(mocks.emitMessage).not.toHaveBeenCalled();
-
-    fetchMock.mockResolvedValueOnce(
-      response({ success: false, errorKey: 'other', errorMessage: '保存失败' }, 409),
-    );
-    await expect(Request.post('/api/test', {}, options)).resolves.toBeUndefined();
-    expect(mocks.emitMessage).toHaveBeenCalledWith('error', '保存失败');
+    await expect(Request.post('/api/test', {})).resolves.toBeUndefined();
+    expect(mocks.emitMessage).toHaveBeenCalledWith('error', '名称已存在');
   });
 
   test('GET 请求组装查询参数和 Hash', async () => {

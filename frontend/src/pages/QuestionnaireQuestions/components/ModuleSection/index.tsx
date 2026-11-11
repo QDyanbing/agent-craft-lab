@@ -2,12 +2,13 @@ import AddButton from '@/components/AddButton';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Empty, Flex, Popconfirm, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import useEditor from '../../models/useEditor';
+import useModuleSet from '../../models/useModuleSet';
+import useQuestionSet from '../../models/useQuestionSet';
 import QuestionItem from '../QuestionItem';
 import styles from './index.module.less';
 
 interface Props {
-  module: API.QuestionnaireModule;
+  module: API.IQuestionnaireModule;
   number: number;
   selectedUuid?: string;
   onDeleteModule: (moduleUuid: string) => Promise<void>;
@@ -15,7 +16,8 @@ interface Props {
 }
 
 export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion }: Props) => {
-  const { onOpen } = useEditor.getState();
+  const { onModify } = useModuleSet.getState();
+  const { onCreate, onModify: onModifyQuestion } = useQuestionSet.getState();
 
   const { t } = useTranslation('questionnaireQuestions');
 
@@ -39,7 +41,7 @@ export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion
             title={t('editModule')}
             aria-label={t('editModule')}
             icon={<EditOutlined />}
-            onClick={() => onOpen({ kind: 'module', moduleUuid: module.uuid })}
+            onClick={() => onModify(module)}
           />
           <Popconfirm
             title={t('confirmModule')}
@@ -57,7 +59,7 @@ export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion
           </Popconfirm>
           <AddButton
             label={t('newQuestion')}
-            onClick={() => onOpen({ kind: 'question', moduleUuid: module.uuid })}
+            onClick={() => onCreate(module.uuid)}
           />
         </Flex>
       </Flex>
@@ -68,7 +70,7 @@ export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion
           number={`${number}.${index + 1}`}
           selected={selectedUuid === question.uuid}
           onEdit={() =>
-            onOpen({ kind: 'question', moduleUuid: module.uuid, questionUuid: question.uuid })
+            onModifyQuestion(module.uuid, question)
           }
           onDelete={() => onDeleteQuestion(module.uuid, question.uuid)}
         />

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 interface Store {
   ready: boolean;
-  params: API.QuestionnaireParams;
+  params: API.IQuestionnaireParams;
   onSearch: (keyword?: string) => void;
   onPaginationChange: (pageNum: number, pageSize: number) => void;
   mount: () => void;
@@ -12,7 +12,7 @@ interface Store {
 
 export default create<Store>((set) => {
   const ready = false;
-  const params: API.QuestionnaireParams = { pageNum: 1, pageSize: DEFAULT_PAGE_SIZE };
+  const params: API.IQuestionnaireParams = { pageNum: 1, pageSize: DEFAULT_PAGE_SIZE };
 
   const onSearch = (keyword?: string) => {
     set(({ params }) => ({ params: { ...params, keyword, pageNum: 1 } }));

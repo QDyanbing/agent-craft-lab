@@ -1,11 +1,11 @@
 import AddButton from '@/components/AddButton';
 import { Flex, Tree, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import useEditor from '../../models/useEditor';
+import useModuleSet from '../../models/useModuleSet';
 import styles from './index.module.less';
 
 interface Props {
-  modules: API.QuestionnaireModule[];
+  modules: API.IQuestionnaireModule[];
   selectedUuid?: string;
   onSelect: (uuid: string) => void;
 }
@@ -15,7 +15,7 @@ const revealSelectedRow = (title: HTMLElement | null) => {
 };
 
 export default ({ modules, selectedUuid, onSelect }: Props) => {
-  const { collapsedModuleUuids, onOpen, onModuleExpandChange } = useEditor();
+  const { onCreate } = useModuleSet();
 
   const { t } = useTranslation('questionnaireQuestions');
 
@@ -35,7 +35,7 @@ export default ({ modules, selectedUuid, onSelect }: Props) => {
     <Flex vertical component="nav" aria-label={t('outline')} className={styles.outline}>
       <Flex align="center" justify="space-between" className={styles.header}>
         <Typography.Title level={5}>{t('outline')}</Typography.Title>
-        <AddButton label={t('newModule')} onClick={() => onOpen({ kind: 'module' })} />
+        <AddButton label={t('newModule')} onClick={onCreate} />
       </Flex>
       <Flex vertical className={styles.body}>
         <Tree
@@ -43,9 +43,7 @@ export default ({ modules, selectedUuid, onSelect }: Props) => {
           virtual={false}
           aria-label={t('outline')}
           treeData={nodes}
-          expandedKeys={modules
-            .filter((module) => !collapsedModuleUuids.includes(module.uuid))
-            .map((module) => module.uuid)}
+          defaultExpandAll
           selectedKeys={selectedUuid ? [selectedUuid] : []}
           titleRender={(node) =>
             node.key === selectedUuid ? (
@@ -54,7 +52,6 @@ export default ({ modules, selectedUuid, onSelect }: Props) => {
               node.title
             )
           }
-          onExpand={(_, { node, expanded }) => onModuleExpandChange(node.key, expanded)}
           onSelect={(_, { node }) => onSelect(node.key)}
         />
       </Flex>

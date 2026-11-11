@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import styles from './index.module.less';
 
 interface Props {
-  question: API.QuestionnaireQuestion;
+  question: API.IQuestionnaireQuestion;
   number: string;
   selected: boolean;
   onEdit: () => void;
@@ -29,7 +29,7 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
           <Typography.Text strong className={styles.title}>
             {t('numberedTitle', { number, title: question.title })}
           </Typography.Text>
-          <Tag variant="filled">{t(question.type)}</Tag>
+          <Tag variant="filled">{t(question.type.toLowerCase())}</Tag>
         </Flex>
         <Flex align="center" className={styles.actions}>
           <Button
@@ -58,7 +58,7 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
       {question.description && (
         <Typography.Text type="secondary">{question.description}</Typography.Text>
       )}
-      {question.type === 'text' && (
+      {question.type === 'TEXT' && (
         <Input.TextArea
           disabled
           rows={2}

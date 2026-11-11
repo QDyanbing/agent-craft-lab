@@ -1,36 +1,34 @@
-import useRequestAction from '@/hooks/useRequestAction';
-import { setModuleCreate } from '@/services/questionnaire';
+import { setCreate } from '@/services/questionnaire/module';
 import { onHistoryAnchorChange } from '@/utils/history';
 import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import useDetail from '../../models/useDetail';
-import useEditor from '../../models/useEditor';
+import useModuleSet from '../../models/useModuleSet';
 import usePage from '../../models/usePage';
 
 export default () => {
   const { onRefresh } = useDetail.getState();
-  const { onClose } = useEditor.getState();
+  const { onCancel } = useModuleSet.getState();
 
   const { t } = useTranslation('questionnaireQuestions');
 
   const { message } = App.useApp();
 
-  const { loading, runAsync } = useRequest(setModuleCreate, { manual: true });
+  const { loading, runAsync } = useRequest(setCreate, { manual: true });
 
-  const onCreate = useRequestAction(async (params: API.QuestionnaireModuleSetParams) => {
+  const onCreate = async (params: API.IQuestionnaireModuleSetParams) => {
     const { uuid } = usePage.getState();
-    const { dialog } = useEditor.getState();
-    if (!uuid || dialog?.kind !== 'module') return;
+    if (!uuid) return;
 
     const result = await runAsync(uuid, params);
     if (!result || usePage.getState().uuid !== uuid) return;
 
     message.success(t('saved'));
-    onClose();
+    onCancel();
     await onRefresh();
     if (usePage.getState().uuid === uuid) onHistoryAnchorChange(result.data.uuid);
-  });
+  };
 
   return { loading, onCreate };
 };

@@ -1,12 +1,12 @@
 import { Button, Flex, Input } from 'antd';
 import { useTranslation } from 'react-i18next';
-import useDialog from '../../models/useDialog';
+import useDataSet from '../../models/useDataSet';
 import usePage from '../../models/usePage';
 import styles from './index.module.less';
 
 export default () => {
   const { params, onSearch } = usePage();
-  const { onOpen } = useDialog.getState();
+  const { onCreate } = useDataSet.getState();
 
   const { t } = useTranslation('questionnaire');
 
@@ -22,7 +22,7 @@ export default () => {
         />
       </Flex>
       <Flex>
-        <Button type="primary" onClick={() => onOpen()}>
+        <Button type="primary" onClick={onCreate}>
           {t('action.create')}
         </Button>
       </Flex>

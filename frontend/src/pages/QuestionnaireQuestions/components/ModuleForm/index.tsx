@@ -3,21 +3,21 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useCreate from '../../hooks/module/useCreate';
 import useModify from '../../hooks/module/useModify';
-import useEditor from '../../models/useEditor';
+import useModuleSet from '../../models/useModuleSet';
 
-export default ({ module }: { module?: API.QuestionnaireModule }) => {
-  const { onClose } = useEditor.getState();
+export default ({ module }: { module?: API.IQuestionnaireModule }) => {
+  const { onCancel } = useModuleSet.getState();
 
   const { loading: creating, onCreate } = useCreate();
   const { loading: modifying, onModify } = useModify();
 
-  const [form] = Form.useForm<API.QuestionnaireModuleSetParams>();
+  const [form] = Form.useForm<API.IQuestionnaireModuleSetParams>();
 
   const { t } = useTranslation('questionnaireQuestions');
 
   const loading = creating || modifying;
 
-  const onFinish = (values: API.QuestionnaireModuleSetParams) =>
+  const onFinish = (values: API.IQuestionnaireModuleSetParams) =>
     module ? onModify(values) : onCreate(values);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default ({ module }: { module?: API.QuestionnaireModule }) => {
       okText={t('save')}
       onOk={() => form.submit()}
       onCancel={() => {
-        if (!loading) onClose();
+        if (!loading) onCancel();
       }}
     >
       <Form layout="vertical" form={form} disabled={loading} onFinish={onFinish}>

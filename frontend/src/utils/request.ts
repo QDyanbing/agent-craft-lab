@@ -4,7 +4,6 @@ import { emitMessage } from '@/utils/message';
 
 type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   skipErrorHandler?: boolean;
-  localErrorKeys?: readonly string[];
 };
 
 type RequestErrorOptions = {
@@ -203,7 +202,7 @@ async function send<TData, TResult>(
   data?: TData,
   options: RequestOptions = {},
 ): Promise<API.SuccessResult<TResult> | undefined> {
-  const { skipErrorHandler = false, localErrorKeys, ...init } = options;
+  const { skipErrorHandler = false, ...init } = options;
   const headers = new Headers(init.headers);
   let requestUrl = `${import.meta.env.VITE_API_BASE_URL ?? ''}${url}`;
 
@@ -268,8 +267,7 @@ async function send<TData, TResult>(
       requestError = new RequestError(content, { cause: error });
     }
 
-    const key = getErrorKey(requestError.data);
-    if (skipErrorHandler || (key && localErrorKeys?.includes(key))) throw requestError;
+    if (skipErrorHandler) throw requestError;
     handleGlobalError(requestError);
     return undefined;
   }

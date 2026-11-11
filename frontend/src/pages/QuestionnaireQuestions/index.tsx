@@ -33,7 +33,7 @@ export default () => {
       {data && data.uuid === uuid ? (
         <Editor
           key={uuid}
-          survey={data}
+          questionnaire={data}
           onDeleteModule={onDeleteModule}
           onDeleteQuestion={onDeleteQuestion}
         />

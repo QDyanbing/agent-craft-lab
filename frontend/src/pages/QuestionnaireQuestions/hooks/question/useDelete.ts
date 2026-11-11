@@ -1,5 +1,4 @@
-import useRequestAction from '@/hooks/useRequestAction';
-import { setQuestionDelete } from '@/services/questionnaire';
+import { setDelete } from '@/services/questionnaire/question';
 import { useRequest } from 'ahooks';
 import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -13,9 +12,9 @@ export default () => {
 
   const { message } = App.useApp();
 
-  const { loading, runAsync } = useRequest(setQuestionDelete, { manual: true });
+  const { loading, runAsync } = useRequest(setDelete, { manual: true });
 
-  const onDelete = useRequestAction(async (moduleUuid: string, questionUuid: string) => {
+  const onDelete = async (moduleUuid: string, questionUuid: string) => {
     const { uuid } = usePage.getState();
     if (!uuid) return;
 
@@ -24,7 +23,7 @@ export default () => {
 
     message.success(t('deleted'));
     await onRefresh();
-  });
+  };
 
   return { loading, onDelete };
 };
