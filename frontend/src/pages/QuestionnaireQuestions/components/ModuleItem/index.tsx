@@ -1,53 +1,54 @@
 import AddButton from '@/components/AddButton';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Empty, Flex, Popconfirm, Typography } from 'antd';
+import type { RefCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import useDelete from '../../hooks/module/useDelete';
 import useModuleSet from '../../models/useModuleSet';
 import useQuestionSet from '../../models/useQuestionSet';
 import QuestionItem from '../QuestionItem';
 import styles from './index.module.less';
 
 interface Props {
-  module: API.IQuestionnaireModule;
+  data: API.IQuestionnaireModule;
   number: number;
-  selectedUuid?: string;
-  onDeleteModule: (moduleUuid: string) => Promise<void>;
-  onDeleteQuestion: (moduleUuid: string, questionUuid: string) => Promise<void>;
+  selected?: string;
+  entryRef: RefCallback<HTMLElement>;
 }
 
-export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion }: Props) => {
-  const { onModify } = useModuleSet.getState();
-  const { onCreate, onModify: onModifyQuestion } = useQuestionSet.getState();
+export default ({ data, number, selected, entryRef }: Props) => {
+  const { onModify } = useModuleSet();
+  const { onCreate } = useQuestionSet();
+
+  const { onDelete } = useDelete();
 
   const { t } = useTranslation('questionnaireQuestions');
 
   return (
-    <Flex vertical component="section" aria-label={module.name} className={styles.moduleSection}>
+    <Flex vertical component="section" aria-label={data.name} className={styles.moduleItem}>
       <Flex
-        wrap
         gap="small"
         align="center"
         justify="space-between"
-        id={module.uuid}
-        data-current={selectedUuid === module.uuid}
+        id={data.uuid}
+        ref={selected === data.uuid ? entryRef : undefined}
+        data-current={selected === data.uuid}
         className={styles.heading}
       >
-        <Typography.Title level={3} className={styles.title}>
-          {module.name}
-        </Typography.Title>
+        <Typography.Title level={4}>{data.name}</Typography.Title>
         <Flex gap="small" align="center">
           <Button
             type="text"
             title={t('editModule')}
             aria-label={t('editModule')}
             icon={<EditOutlined />}
-            onClick={() => onModify(module)}
+            onClick={() => onModify(data)}
           />
           <Popconfirm
             title={t('confirmModule')}
             okText={t('confirm')}
             cancelText={t('cancel')}
-            onConfirm={() => onDeleteModule(module.uuid)}
+            onConfirm={() => onDelete(data.uuid)}
           >
             <Button
               danger
@@ -57,25 +58,20 @@ export default ({ module, number, selectedUuid, onDeleteModule, onDeleteQuestion
               icon={<DeleteOutlined />}
             />
           </Popconfirm>
-          <AddButton
-            label={t('newQuestion')}
-            onClick={() => onCreate(module.uuid)}
-          />
+          <AddButton label={t('newQuestion')} onClick={() => onCreate(data.uuid)} />
         </Flex>
       </Flex>
-      {module.questions.map((question, index) => (
+      {data.questions.map((question, index) => (
         <QuestionItem
           key={question.uuid}
+          moduleUuid={data.uuid}
           question={question}
           number={`${number}.${index + 1}`}
-          selected={selectedUuid === question.uuid}
-          onEdit={() =>
-            onModifyQuestion(module.uuid, question)
-          }
-          onDelete={() => onDeleteQuestion(module.uuid, question.uuid)}
+          isSelected={selected === question.uuid}
+          entryRef={entryRef}
         />
       ))}
-      {module.questions.length === 0 && (
+      {data.questions.length === 0 && (
         <Empty
           image={false}
           description={t('questionEmpty')}

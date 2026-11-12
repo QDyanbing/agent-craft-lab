@@ -21,26 +21,4 @@
   .actions {
     flex-shrink: 0;
   }
-
-  .options {
-    margin: 0;
-    padding-inline-start: 0;
-  }
-
-  .option {
-    align-items: baseline;
-
-    &::before {
-      flex: none;
-      width: var(--ant-font-size-sm);
-      height: var(--ant-font-size-sm);
-      border: var(--ant-line-width) solid var(--ant-color-text-tertiary);
-      border-radius: var(--ant-border-radius-xs);
-      content: '';
-    }
-
-    &[data-type='SINGLE']::before {
-      border-radius: 50%;
-    }
-  }
 }

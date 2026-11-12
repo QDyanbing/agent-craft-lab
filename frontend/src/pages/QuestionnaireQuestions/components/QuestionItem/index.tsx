@@ -1,18 +1,37 @@
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { Button, Flex, Input, Popconfirm, Tag, Typography } from 'antd';
+import {
+  Button,
+  Checkbox,
+  Flex,
+  Input,
+  InputNumber,
+  Popconfirm,
+  Radio,
+  Tag,
+  Typography,
+} from 'antd';
+import type { RefCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import useDelete from '../../hooks/question/useDelete';
+import useQuestionSet from '../../models/useQuestionSet';
 import styles from './index.module.less';
 
 interface Props {
+  moduleUuid: string;
   question: API.IQuestionnaireQuestion;
   number: string;
-  selected: boolean;
-  onEdit: () => void;
-  onDelete: () => Promise<void>;
+  isSelected: boolean;
+  entryRef: RefCallback<HTMLElement>;
 }
 
-export default ({ question, number, selected, onEdit, onDelete }: Props) => {
+export default ({ moduleUuid, question, number, isSelected, entryRef }: Props) => {
+  const { onModify } = useQuestionSet();
+
+  const { onDelete } = useDelete();
+
   const { t } = useTranslation('questionnaireQuestions');
+
+  const Choice = question.type === 'SINGLE' ? Radio : Checkbox;
 
   return (
     <Flex
@@ -20,12 +39,13 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
       gap="small"
       role="group"
       id={question.uuid}
-      data-current={selected}
+      ref={isSelected ? entryRef : undefined}
+      data-current={isSelected}
       aria-label={question.title}
       className={styles.questionItem}
     >
       <Flex gap="small" align="start" justify="space-between">
-        <Flex wrap gap="small" align="center" className={styles.content}>
+        <Flex gap="small" align="center" className={styles.content}>
           <Typography.Text strong className={styles.title}>
             {t('numberedTitle', { number, title: question.title })}
           </Typography.Text>
@@ -37,13 +57,13 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
             aria-label={t('editQuestion')}
             title={t('editQuestion')}
             icon={<EditOutlined />}
-            onClick={onEdit}
+            onClick={() => onModify(moduleUuid, question)}
           />
           <Popconfirm
             title={t('confirmQuestion')}
             okText={t('confirm')}
             cancelText={t('cancel')}
-            onConfirm={onDelete}
+            onConfirm={() => onDelete(moduleUuid, question.uuid)}
           >
             <Button
               danger
@@ -66,18 +86,13 @@ export default ({ question, number, selected, onEdit, onDelete }: Props) => {
           placeholder={t('textAnswerPlaceholder')}
         />
       )}
+      {question.type === 'NUMBER' && <InputNumber disabled aria-label={question.title} />}
       {question.options.length > 0 && (
-        <Flex vertical gap="small" component="ul" className={styles.options}>
+        <Flex vertical gap="small" align="start">
           {question.options.map((option, index) => (
-            <Flex
-              gap="small"
-              component="li"
-              key={index}
-              data-type={question.type}
-              className={styles.option}
-            >
+            <Choice disabled key={index}>
               {option}
-            </Flex>
+            </Choice>
           ))}
         </Flex>
       )}

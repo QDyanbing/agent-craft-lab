@@ -16,8 +16,8 @@ interface FormValues {
 
 const QUESTION_TYPES: API.TQuestionnaireQuestionType[] = ['SINGLE', 'MULTIPLE', 'TEXT', 'NUMBER'];
 
-export default ({ question }: { question?: API.IQuestionnaireQuestion }) => {
-  const { onCancel } = useQuestionSet.getState();
+export default () => {
+  const { question, onCancel } = useQuestionSet();
 
   const { loading: creating, onCreate } = useCreate();
   const { loading: modifying, onModify } = useModify();
@@ -41,21 +41,24 @@ export default ({ question }: { question?: API.IQuestionnaireQuestion }) => {
   };
 
   useEffect(() => {
-    if (!question) {
+    if (question === undefined) return;
+
+    if (question) {
+      form.setFieldsValue({
+        type: { value: question.type, label: t(question.type.toLowerCase()) },
+        title: question.title,
+        description: question.description,
+        options: question.options.length ? question.options : ['', ''],
+      });
+    } else {
       form.resetFields();
-      return;
     }
-    form.setFieldsValue({
-      type: { value: question.type, label: t(question.type.toLowerCase()) },
-      title: question.title,
-      description: question.description,
-      options: question.options.length ? question.options : ['', ''],
-    });
   }, [form, question, t]);
 
   return (
     <Modal
-      open
+      destroyOnHidden
+      open={question !== undefined}
       confirmLoading={loading}
       title={t(question ? 'editQuestion' : 'newQuestion')}
       okText={t('save')}
@@ -104,20 +107,16 @@ export default ({ question }: { question?: API.IQuestionnaireQuestion }) => {
                 <Flex vertical gap="small">
                   {fields.map(({ key, name }, index) => (
                     <Flex gap="small" align="baseline" key={key}>
-                      <Flex vertical flex={1}>
-                        <Form.Item
-                          noStyle
-                          name={name}
-                          rules={[
-                            { required: true, whitespace: true, message: t('requireOption') },
-                          ]}
-                        >
-                          <Input
-                            aria-label={t('option', { n: index + 1 })}
-                            placeholder={t('option', { n: index + 1 })}
-                          />
-                        </Form.Item>
-                      </Flex>
+                      <Form.Item
+                        noStyle
+                        name={name}
+                        rules={[{ required: true, whitespace: true, message: t('requireOption') }]}
+                      >
+                        <Input
+                          aria-label={t('option', { n: index + 1 })}
+                          placeholder={t('option', { n: index + 1 })}
+                        />
+                      </Form.Item>
                       <Button
                         type="text"
                         aria-label={t('removeOption', { n: index + 1 })}

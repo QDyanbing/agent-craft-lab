@@ -9,7 +9,6 @@ export default {
     moduleName: '模块名称',
     moduleRequired: '请输入模块名称',
     moduleEmpty: '尚未添加模块',
-    firstModule: '先添加一个模块，再录入这个模块的题目。',
     questionEmpty: '这个模块尚无题目',
     newQuestion: '新增题目',
     editQuestion: '编辑题目',

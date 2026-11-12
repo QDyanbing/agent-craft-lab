@@ -5,8 +5,8 @@ import useCreate from '../../hooks/module/useCreate';
 import useModify from '../../hooks/module/useModify';
 import useModuleSet from '../../models/useModuleSet';
 
-export default ({ module }: { module?: API.IQuestionnaireModule }) => {
-  const { onCancel } = useModuleSet.getState();
+export default () => {
+  const { module, onCancel } = useModuleSet();
 
   const { loading: creating, onCreate } = useCreate();
   const { loading: modifying, onModify } = useModify();
@@ -21,13 +21,16 @@ export default ({ module }: { module?: API.IQuestionnaireModule }) => {
     module ? onModify(values) : onCreate(values);
 
   useEffect(() => {
+    if (module === undefined) return;
+
     if (module) form.setFieldsValue({ name: module.name });
     else form.resetFields();
   }, [form, module]);
 
   return (
     <Modal
-      open
+      destroyOnHidden
+      open={module !== undefined}
       confirmLoading={loading}
       title={t(module ? 'editModule' : 'newModule')}
       okText={t('save')}

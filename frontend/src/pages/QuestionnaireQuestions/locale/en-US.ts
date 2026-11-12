@@ -9,7 +9,6 @@ export default {
     moduleName: 'Module name',
     moduleRequired: 'Enter a module name',
     moduleEmpty: 'No modules yet',
-    firstModule: 'Add a module to start writing its questions.',
     questionEmpty: 'No questions in this module',
     newQuestion: 'Add question',
     editQuestion: 'Edit question',

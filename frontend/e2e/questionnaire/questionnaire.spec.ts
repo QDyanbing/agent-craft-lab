@@ -139,6 +139,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
 
   for (const module of ['基本信息', '课程反馈模块']) {
     await page.getByRole('button', { name: '新增模块' }).click();
+    await expect(dialog.getByLabel('模块名称')).toHaveValue('');
     await dialog.getByLabel('模块名称').fill(module);
     await save.click();
     await expect(outline.getByRole('treeitem', { name: new RegExp(module) })).toHaveAttribute(
@@ -170,9 +171,9 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
       await expect(moduleEntry).toHaveAttribute('aria-expanded', 'false');
       await expect(questionEntry).toHaveCount(0);
       await expect(course.getByRole('group')).toHaveCount(3);
-      await page.setViewportSize({ width: 640, height: 600 });
     }
     await course.getByRole('button', { name: '新增题目' }).click();
+    await expect(dialog.getByLabel('标题')).toHaveValue('');
     await dialog.getByRole('combobox').click();
     await page.getByRole('option', { name: type, exact: true }).click();
     await dialog.getByLabel('标题').fill(`${type}题`);
@@ -190,7 +191,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   await expect(lastEntry).toHaveCount(0);
   await expect(lastQuestion).toHaveAttribute('id', new URL(page.url()).hash.slice(1));
 
-  await page.setViewportSize({ width: 840, height: 380 });
+  await page.setViewportSize({ width: 1120, height: 380 });
   const saved = new URL(page.url());
   await page.goto(`/Questionnaires/Edit${saved.search}${saved.hash}`);
   await expect(page).toHaveURL(`/questionnaires/questions${saved.search}${saved.hash}`);
@@ -202,6 +203,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   const textAnswer = course.getByRole('textbox', { name: '文本题', exact: true });
   await expect(textAnswer).toBeVisible();
   await expect(textAnswer).toBeDisabled();
+  await expect(lastQuestion.getByRole('spinbutton', { name: '数字题' })).toBeDisabled();
   const single = course.getByRole('group', { name: '单选题' });
   const firstHeading = basics.getByRole('heading');
   await expect(firstHeading).not.toBeInViewport();
@@ -215,12 +217,17 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   await expect(questionEntry).toHaveAttribute('aria-selected', 'true');
   await expect(single).toBeInViewport();
   await expect(single).toHaveAttribute('id', new URL(page.url()).hash.slice(1));
+  await lastQuestion.scrollIntoViewIfNeeded();
+  await expect(single).not.toBeInViewport();
+  await questionEntry.click();
+  await expect(single).toBeInViewport();
   await page.reload();
   await expect(questionEntry).toHaveAttribute('aria-selected', 'true');
   await expect(single).toBeInViewport();
   await expect(basics).toBeAttached();
-  await expect(single.getByRole('listitem')).toHaveText(['线上', '线下']);
-  await page.setViewportSize({ width: 1100, height: 800 });
+  await expect(single.getByRole('radio', { name: '线上' })).toBeDisabled();
+  await expect(single.getByRole('radio', { name: '线下' })).toBeDisabled();
+  await page.setViewportSize({ width: 1120, height: 800 });
   await single.getByRole('button', { name: '编辑题目' }).click();
   await expect(dialog.getByRole('textbox', { name: '选项 2' })).toHaveValue('线下');
   await dialog.getByRole('combobox').click();
@@ -230,7 +237,7 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   const updated = page.getByRole('group', { name: '补充建议' });
   await expect(updated).toContainText('文本');
   await expect(updated.getByRole('textbox', { name: '补充建议' })).toBeVisible();
-  await expect(updated.getByRole('listitem')).toHaveCount(0);
+  await expect(updated.getByRole('radio')).toHaveCount(0);
   await updated.getByRole('button', { name: '删除题目' }).click();
   await page.getByRole('button', { name: /^删\s*除$/ }).click();
   await expect(updated).toHaveCount(0);
