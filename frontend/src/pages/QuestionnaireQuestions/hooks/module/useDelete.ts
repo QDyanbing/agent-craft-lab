@@ -6,7 +6,8 @@ import useDetail from '../../models/useDetail';
 import usePage from '../../models/usePage';
 
 export default () => {
-  const { onRefresh } = useDetail.getState();
+  const { uuid } = usePage();
+  const { onRefresh } = useDetail();
 
   const { t } = useTranslation('questionnaireQuestions');
 
@@ -15,7 +16,6 @@ export default () => {
   const { loading, runAsync } = useRequest(setDelete, { manual: true });
 
   const onDelete = async (moduleUuid: string) => {
-    const { uuid } = usePage.getState();
     if (!uuid) return;
 
     const result = await runAsync(uuid, moduleUuid);

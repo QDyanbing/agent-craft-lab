@@ -7,8 +7,9 @@ import useModuleSet from '../../models/useModuleSet';
 import usePage from '../../models/usePage';
 
 export default () => {
-  const { onRefresh } = useDetail.getState();
-  const { onCancel } = useModuleSet.getState();
+  const { uuid } = usePage();
+  const { onRefresh } = useDetail();
+  const { module, onCancel } = useModuleSet();
 
   const { t } = useTranslation('questionnaireQuestions');
 
@@ -17,8 +18,6 @@ export default () => {
   const { loading, runAsync } = useRequest(setModify, { manual: true });
 
   const onModify = async (params: API.IQuestionnaireModuleSetParams) => {
-    const { uuid } = usePage.getState();
-    const { module } = useModuleSet.getState();
     if (!uuid || !module) return;
 
     const result = await runAsync(uuid, module.uuid, params);
