@@ -40,19 +40,18 @@ export class ResponseService {
     return this.database.transaction('IMMEDIATE', () => {
       const db = this.database.connection;
       const detail = this.repository.readTree(survey);
-      if (!db.prepare('SELECT 1 FROM craft_lab_modules WHERE uuid = ? AND questionnaire_uuid = ?').get(module, survey)) {
-        throw new QuestionnaireError('module');
+      const parent = detail.modules.find((item) => item.uuid === module);
+      if (!parent) throw new QuestionnaireError('module');
+      const target = parent.questions.find((item) => item.uuid === question);
+      if (!target) throw new QuestionnaireError('record');
+      if (answer === null && target.type !== 'SINGLE') {
+        db.prepare('DELETE FROM craft_lab_answer WHERE question_uuid = ?').run(question);
+        return null;
       }
-      if (!db.prepare('SELECT 1 FROM craft_lab_questions WHERE uuid = ? AND module_uuid = ?').get(question, module)) {
-        throw new QuestionnaireError('record');
-      }
-      const target = detail.modules
-        .flatMap((item) => item.questions)
-        .find((item) => item.uuid === question);
       const encoded = JSON.stringify(answer);
       if (encoded === undefined) throw new QuestionnaireError('answer');
       const submitted = JSON.parse(encoded);
-      if (!target || !validAnswer(target, submitted)) throw new QuestionnaireError('answer');
+      if (!validAnswer(target, submitted)) throw new QuestionnaireError('answer');
 
       const previous = db.prepare('SELECT uuid FROM craft_lab_answer WHERE question_uuid = ?').get(question);
       if (previous) {

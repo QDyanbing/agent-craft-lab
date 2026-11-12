@@ -1,5 +1,6 @@
 declare namespace API {
   type TQuestionnaireQuestionType = 'SINGLE' | 'MULTIPLE' | 'TEXT' | 'NUMBER';
+  type TQuestionnaireAnswer = number | number[] | string;
 
   interface IQuestionnaireQuestionSetParams {
     type: TQuestionnaireQuestionType;
@@ -14,6 +15,6 @@ declare namespace API {
     title: string;
     description: string;
     options: string[];
-    answer?: number | number[] | string;
+    answer?: TQuestionnaireAnswer;
   }
 }

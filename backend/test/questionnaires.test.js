@@ -89,6 +89,21 @@ test(
         saved.map((question) => ({ ...question, answer: answers[question.uuid] })),
       );
 
+      const clearable = saved.filter((question) => question.type !== "SINGLE");
+      for (const question of clearable) {
+        assert.equal(await answer(question.uuid, null), null);
+      }
+      await answer(saved[0].uuid, null, 400);
+      assert.deepEqual((await request("GET", survey)).modules[0].questions, [
+        { ...saved[0], answer: 0 },
+        ...clearable,
+      ]);
+      assert.equal(await answer(saved[1].uuid, null), null);
+      await answer(saved[0].uuid, undefined, 400);
+      for (const question of clearable) {
+        await answer(question.uuid, answers[question.uuid]);
+      }
+
       const sibling = await request("POST", survey + "/modules", {
         name: "另一个模块",
       });

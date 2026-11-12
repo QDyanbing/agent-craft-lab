@@ -21,11 +21,7 @@ export const setModify = (
     data,
   );
 
-export const setDelete = (
-  questionnaireUuid: string,
-  moduleUuid: string,
-  questionUuid: string,
-) =>
+export const setDelete = (questionnaireUuid: string, moduleUuid: string, questionUuid: string) =>
   Request.delete<undefined, null>(
     `/api/questionnaires/${questionnaireUuid}/modules/${moduleUuid}/questions/${questionUuid}`,
   );
@@ -34,9 +30,9 @@ export const setAnswer = (
   questionnaireUuid: string,
   moduleUuid: string,
   questionUuid: string,
-  answer: number | number[] | string,
+  answer: API.TQuestionnaireAnswer | null,
 ) =>
-  Request.post<{ answer: number | number[] | string }, { uuid: string }>(
+  Request.post<{ answer: API.TQuestionnaireAnswer | null }, { uuid: string } | null>(
     `/api/questionnaires/${questionnaireUuid}/modules/${moduleUuid}/questions/${questionUuid}/answer`,
     { answer },
   );

@@ -75,6 +75,7 @@ export class SearchDto {
 
 export class SubmitResponseDto {
   @Transform(({ obj }) => obj.answer)
+  @ValidateIf((_, value) => value !== null)
   @IsDefined()
   answer!: unknown;
 }
