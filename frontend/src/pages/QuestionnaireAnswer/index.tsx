@@ -1,16 +1,16 @@
 import useUrlState from '@/hooks/useUrlState';
-import { Empty, Flex, Spin, Typography } from 'antd';
+import { Card, Empty, Flex, Form, Spin, Typography } from 'antd';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import AnswerForm from './components/AnswerForm';
+import AnswerItem from './components/AnswerItem';
 import useAnswer from './hooks/useAnswer';
 import styles from './index.module.less';
 import useDetail from './models/useDetail';
 import usePage from './models/usePage';
 
 export default () => {
-  const { uuid: currentUuid, mount, unmount } = usePage();
-  const { loading, data } = useDetail();
+  const { mount, unmount } = usePage();
+  const { loading, data: questionnaire } = useDetail();
 
   const { loading: answering, onAnswer } = useAnswer();
 
@@ -18,22 +18,20 @@ export default () => {
 
   const { t } = useTranslation('questionnaireAnswer');
 
-  const isLoading = loading || answering || currentUuid !== uuid;
-  const questionnaire = data?.uuid === uuid ? data : undefined;
   const hasQuestions = questionnaire?.modules.some((module) => module.questions.length > 0);
 
   useEffect(() => {
     mount(uuid);
 
     return unmount;
-  }, [mount, unmount, uuid]);
+  }, [uuid]);
 
   return (
     <Spin
-      spinning={isLoading}
+      spinning={loading || answering}
       classNames={{ root: styles.questionnaireAnswer, container: styles.container }}
     >
-      {!questionnaire && !isLoading && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
+      {!questionnaire && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
       {questionnaire && (
         <>
           <Flex vertical gap="small" component="header" className={styles.header}>
@@ -43,7 +41,28 @@ export default () => {
             )}
           </Flex>
           {hasQuestions ? (
-            <AnswerForm key={questionnaire.uuid} questionnaire={questionnaire} onAnswer={onAnswer} />
+            <Form key={questionnaire.uuid} layout="vertical" className={styles.form}>
+              {questionnaire.modules.map(
+                (module, moduleIndex) =>
+                  module.questions.length > 0 && (
+                    <Card
+                      key={module.uuid}
+                      role="region"
+                      aria-label={module.name}
+                      title={<Typography.Title level={3}>{module.name}</Typography.Title>}
+                    >
+                      {module.questions.map((question, index) => (
+                        <AnswerItem
+                          key={question.uuid}
+                          question={question}
+                          number={`${moduleIndex + 1}.${index + 1}`}
+                          onAnswer={(value) => onAnswer(module.uuid, question.uuid, value)}
+                        />
+                      ))}
+                    </Card>
+                  ),
+              )}
+            </Form>
           ) : (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('empty')} />
           )}

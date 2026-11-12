@@ -12,6 +12,63 @@ test.afterAll(async ({ request }) => {
   }
 });
 
+test('清空多选、文本和数字后刷新仍为空', async ({ page, request }) => {
+  const post = async (path: string, data: object) => {
+    const response = await request.post(path, { data });
+    expect(response.status()).toBe(201);
+    const result: API.SuccessResult<{ uuid: string }> = await response.json();
+    expect(result.success).toBe(true);
+    return result.data.uuid;
+  };
+
+  const uuid = await post('/api/questionnaires', { name: `清空答案-${randomUUID()}` });
+  created.add(uuid);
+  const modules = `/api/questionnaires/${uuid}/modules`;
+  const module = await post(modules, { name: '反馈' });
+  const questions = `${modules}/${module}/questions`;
+  const entries = [
+    { type: 'SINGLE', title: '单选', options: ['选项'], answer: 0 },
+    { type: 'MULTIPLE', title: '多选', options: ['选项'], answer: [0] },
+    { type: 'TEXT', title: '文本', answer: '已填写' },
+    { type: 'NUMBER', title: '数字', answer: 0 },
+  ];
+  for (const { answer, ...question } of entries) {
+    const id = await post(questions, question);
+    await post(`${questions}/${id}/answer`, { answer });
+  }
+
+  await page.goto(`/questionnaires/answer?uuid=${uuid}`);
+  const radio = page.getByRole('radio', { name: '选项' });
+  const checkbox = page.getByRole('checkbox', { name: '选项' });
+  const text = page.getByRole('textbox', { name: /文本/ });
+  const number = page.getByRole('spinbutton', { name: /数字/ });
+  await expect(radio).toBeChecked();
+  await expect(checkbox).toBeChecked();
+  await expect(text).toHaveValue('已填写');
+  await expect(number).toHaveValue('0');
+
+  const clear = async (action: () => Promise<void>) => {
+    const saved = page.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().endsWith('/answer'),
+    );
+    await action();
+    const response = await saved;
+    expect(response.status()).toBe(201);
+    expect(await response.json()).toEqual({ success: true, data: null });
+  };
+  await clear(() => checkbox.uncheck());
+  await text.fill('');
+  await clear(() => text.blur());
+  await number.fill('');
+  await clear(() => number.blur());
+
+  await page.reload();
+  await expect(radio).toBeChecked();
+  await expect(checkbox).not.toBeChecked();
+  await expect(text).toHaveValue('');
+  await expect(number).toHaveValue('');
+});
+
 test('搜索、翻页和删除末页唯一问卷后显示对应结果', async ({ page, request }) => {
   const keyword = randomUUID();
   let oldestUuid = '';
