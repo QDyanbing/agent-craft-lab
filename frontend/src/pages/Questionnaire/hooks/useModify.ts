@@ -6,8 +6,8 @@ import useData from '../models/useData';
 import useDataSet from '../models/useDataSet';
 
 export default () => {
-  const { onRefresh } = useData.getState();
-  const { onCancel } = useDataSet.getState();
+  const { onRefresh } = useData();
+  const { questionnaire, onCancel } = useDataSet();
 
   const { t } = useTranslation('questionnaire');
 
@@ -16,7 +16,6 @@ export default () => {
   const { loading, runAsync } = useRequest(setModify, { manual: true });
 
   const onModify = async (values: API.IQuestionnaireSetParams) => {
-    const { questionnaire } = useDataSet.getState();
     if (!questionnaire) return;
 
     const result = await runAsync(questionnaire.uuid, values);

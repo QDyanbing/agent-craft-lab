@@ -6,7 +6,7 @@ import styles from './index.module.less';
 
 export default () => {
   const { params, onSearch } = usePage();
-  const { onCreate } = useDataSet.getState();
+  const { onCreate } = useDataSet();
 
   const { t } = useTranslation('questionnaire');
 

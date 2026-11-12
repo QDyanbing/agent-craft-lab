@@ -16,9 +16,9 @@ import usePage from './models/usePage';
 const ACTION_COLUMN_WIDTH = { 'zh-CN': 220, 'en-US': 320 };
 
 export default () => {
-  const { mount, unmount, params, onPaginationChange } = usePage();
+  const { params, onPaginationChange, mount, unmount } = usePage();
   const { loading, data, total } = useData();
-  const { onModify } = useDataSet.getState();
+  const { onModify } = useDataSet();
 
   const { loading: deleteLoading, onDelete } = useDelete();
 
@@ -44,7 +44,6 @@ export default () => {
       title: t('column.questionCount'),
       dataIndex: 'questionCount',
       align: 'center',
-      responsive: ['sm'],
     },
     {
       width: getLocaleValue(ACTION_COLUMN_WIDTH),
@@ -52,7 +51,7 @@ export default () => {
       dataIndex: 'uuid',
       align: 'left',
       render: (uuid: string, questionnaire) => (
-        <Flex wrap gap="medium" align="center">
+        <Flex gap="medium" align="center">
           <Button type="link" className={styles.action} onClick={() => onModify(questionnaire)}>
             {t('action.modify')}
           </Button>
@@ -93,7 +92,7 @@ export default () => {
     mount();
 
     return unmount;
-  }, [mount, unmount]);
+  }, []);
 
   return (
     <Spin

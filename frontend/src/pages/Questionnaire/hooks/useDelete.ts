@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import useData from '../models/useData';
 
 export default () => {
-  const { onRefresh } = useData.getState();
+  const { onRefresh } = useData();
 
   const { t } = useTranslation('questionnaire');
 
