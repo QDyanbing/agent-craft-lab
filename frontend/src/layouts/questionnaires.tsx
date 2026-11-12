@@ -2,12 +2,11 @@ import LocaleSwitch from '@/components/LocaleSwitch';
 import { onHistoryChange } from '@/utils/history';
 import { ProfileOutlined, SnippetsOutlined } from '@ant-design/icons';
 import { Outlet, useMatches } from '@tanstack/react-router';
-import { Avatar, Button, Flex, Grid, Menu } from 'antd';
+import { Avatar, Button, Flex, Menu } from 'antd';
 import { useTranslation } from 'react-i18next';
 import styles from './questionnaires.module.less';
 
 export default () => {
-  const screens = Grid.useBreakpoint();
   const page = useMatches({ select: (matches): string => matches[matches.length - 1].fullPath });
 
   const { t } = useTranslation('layout');
@@ -27,10 +26,10 @@ export default () => {
           <LocaleSwitch />
         </Flex>
       </Flex>
-      <Flex vertical={!screens.lg} className={styles.body}>
+      <Flex className={styles.body}>
         <Flex vertical component="nav" aria-label={t('mainNavigation')}>
           <Menu
-            mode={screens.lg ? 'inline' : 'horizontal'}
+            mode="inline"
             items={[
               {
                 key: '/questionnaires',

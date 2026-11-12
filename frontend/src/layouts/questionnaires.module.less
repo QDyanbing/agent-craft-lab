@@ -12,7 +12,7 @@
 
   .navigation,
   .content {
-    padding-inline: clamp(var(--ant-padding), 4vw, var(--ant-padding-xl));
+    padding-inline: var(--ant-padding-xl);
   }
 
   .navigation {
@@ -51,7 +51,7 @@
     min-height: 0;
     max-width: var(--questionnaire-content-width);
     margin-inline: auto;
-    padding-block: clamp(var(--ant-padding), 3vw, var(--ant-padding-xl));
+    padding-block: var(--ant-padding-xl);
     overflow: auto;
 
     &[data-page='/questionnaires'],
