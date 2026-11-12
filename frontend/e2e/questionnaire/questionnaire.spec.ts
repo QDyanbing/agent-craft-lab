@@ -259,7 +259,8 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   const answerSaved = () =>
     page.waitForResponse(
       (response) =>
-        response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/answer'),
+        response.request().method() === 'POST' &&
+        new URL(response.url()).pathname.endsWith('/answer'),
     );
   const multipleSaved = answerSaved();
   await page.getByRole('checkbox', { name: '线上' }).check();
@@ -271,6 +272,10 @@ test('创建问卷，维护模块和四种题型，刷新后回显', async ({ pa
   const numberSaved = answerSaved();
   await page.getByRole('heading', { name: newName, exact: true }).click();
   expect((await numberSaved).status()).toBe(201);
+  await page.reload();
+  await expect(page.getByRole('checkbox', { name: '线上' })).toBeChecked();
+  await expect(page.getByRole('textbox', { name: /文本题/ })).toHaveValue('很有帮助');
+  await expect(page.getByRole('spinbutton', { name: /数字题/ })).toHaveValue('0');
   await page.getByRole('menuitem', { name: '问卷列表' }).click();
   await expect(row).toBeVisible();
   await row.getByRole('button', { name: /改\s*题/ }).click();
