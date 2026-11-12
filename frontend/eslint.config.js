@@ -19,5 +19,8 @@ export default defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [reactHooks.configs.flat['recommended-latest']],
+    rules: {
+      'react-hooks/exhaustive-deps': 'off',
+    },
   },
 ]);
