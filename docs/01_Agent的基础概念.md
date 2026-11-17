@@ -27,3 +27,35 @@
 在 Agent 开发中，上下文为模型决定下一步提供依据。Agent 程序在每次调用前，把当前任务所需的信息组织成上下文，让模型知道要做什么、有哪些约束、已经得到什么结果。历史记录或长期记忆只有被纳入本次上下文，才能直接参与这次判断。
 
 **本质：**给模型的全部输入，即聊天记录
+
+## 综上总结
+
+- Agent 开发的本质就是给 LLM 整理上下文的过程；
+
+## 通信时如何将上下文发送给 LLM
+
+**本质就是一次 HTTP 请求。** 程序把对话按顺序放进请求体。以用户说“你好”为例，各家接口的消息部分写法如下。
+
+| 接口                                                | 请求体中的消息                                             |
+| --------------------------------------------------- | ---------------------------------------------------------- |
+| DeepSeek / OpenAI Chat Completions、Claude Messages | `{"messages":[{"role":"user","content":"你好"}]}`          |
+| OpenAI Responses                                    | `{"input":[{"role":"user","content":"你好"}]}`             |
+| Gemini generateContent                              | `{"contents":[{"role":"user","parts":[{"text":"你好"}]}]}` |
+
+## role 是什么
+
+`role` 标明一条消息的来源，取值由接口规定。前文四家服务的消息角色按含义列在下面。
+
+- **用户**　`user`（DeepSeek、OpenAI、Claude、Gemini）。
+- **模型回复**　`assistant`（DeepSeek、OpenAI、Claude），`model`（Gemini）。
+- **系统指令**　`system`（DeepSeek、OpenAI）。Claude 的初始指令放在顶层 `system` 字段，支持会话中途更新指令的 Claude 模型也接受 `role: "system"`。Gemini 用顶层 `systemInstruction` 字段。
+- **开发者指令**　`developer`（OpenAI Chat Completions、OpenAI Responses）。
+- **工具执行结果**　`tool`（DeepSeek、OpenAI Chat Completions）。Claude 用 `user` 消息携带 `tool_result` 内容块，Gemini 用 `user` 消息携带 `functionResponse`。OpenAI Responses 的函数结果用 `type: "function_call_output"`。
+- **旧版函数执行结果**　`function`（OpenAI Chat Completions，已弃用）。旧版 Gemini SDK 的函数结果消息也使用过 `function`。
+- **用户环境信息**　`latest_reminder`（DeepSeek），放在对应 `user` 消息之前，可携带日期、星期、地点、平台和语言。
+
+**必须传吗？** 本项目用的 DeepSeek Chat Completions 要求每条消息都写 `role`，但一次请求只发一条 `user` 消息就够了。其他接口按各自格式约定：
+
+- OpenAI Chat Completions 和 Claude Messages 的 `messages` 消息对象也需要 `role`。
+- OpenAI Responses 可以直接传 `{"input":"你好"}`，等同于用户输入。传消息对象时要写 `role`。
+- Gemini 的 `contents[].role` 可省略。多轮对话建议用 `user` 和 `model` 标清双方发言。
