@@ -49,7 +49,7 @@
 - **用户**　`user`（DeepSeek、OpenAI、Claude、Gemini）。
 - **模型回复**　`assistant`（DeepSeek、OpenAI、Claude），`model`（Gemini）。
 - **系统指令**　`system`（DeepSeek、OpenAI）。Claude 的初始指令放在顶层 `system` 字段，支持会话中途更新指令的 Claude 模型也接受 `role: "system"`。Gemini 用顶层 `systemInstruction` 字段。
-- **开发者指令**　`developer`（OpenAI Chat Completions、OpenAI Responses）。
+- **开发者指令**　`developer`（OpenAI Chat Completions、OpenAI Responses）。DeepSeek Responses 也接受此角色，但会按模型映射为其他角色，见下文指令层级。
 - **工具执行结果**　`tool`（DeepSeek、OpenAI Chat Completions）。Claude 用 `user` 消息携带 `tool_result` 内容块，Gemini 用 `user` 消息携带 `functionResponse`。OpenAI Responses 的函数结果用 `type: "function_call_output"`。
 - **旧版函数执行结果**　`function`（OpenAI Chat Completions，已弃用）。旧版 Gemini SDK 的函数结果消息也使用过 `function`。
 - **用户环境信息**　`latest_reminder`（DeepSeek），放在对应 `user` 消息之前，可携带日期、星期、地点、平台和语言。
@@ -110,3 +110,87 @@ Token 是模型读取和生成文本的基本单位，由分词器划分。一�
 需要工具时，工具定义放在请求的 `tools` 字段，调用结果再按接口格式加入后续上下文。
 
 **本质：**决定本次给模型什么信息，以及如何组合。例如询问某个控制项是否符合要求，需要同时提供该控制项的评估规则和实际证据。
+
+## 指令层级（Instruction Hierarchy）是什么
+
+指令层级规定：上下文中的要求发生冲突时，模型应该听谁的。
+
+各厂商的约定不同（2026-11-25 核对）：
+
+| 厂商 | 官方说明的指令关系 | 接口中怎么传 |
+| --- | --- | --- |
+| [OpenAI](https://model-spec.openai.com/2026-10-29.html#follow-all-applicable-instructions) | `Root > system > developer > user > guideline`。同层级冲突时，后续要求覆盖此前要求。 | 消息用 `role: "system"`、`"developer"`、`"user"`。 |
+| [Anthropic / Claude](https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages) | 系统指令优先于用户指令。同层系统指令冲突时，后发的系统消息优先。应用方仍受 [Anthropic 自身规则](https://www.anthropic.com/constitution)约束。 | 初始要求放顶层 `system`，用户要求放 `messages` 的 `user` 消息；支持的模型还可追加 `system` 消息。 |
+| [Google / Gemini](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/prompts/system-instruction-introduction) | 系统指令用于指导整个对话；官方说明模型先处理系统指令，再处理提示。所查文档没有列出完整的冲突优先级表。 | `generateContent` 用顶层 `systemInstruction`，用户消息放 `contents`，角色为 `user`。 |
+| [DeepSeek](https://api-docs.deepseek.com/api/create-chat-completion/) | Chat Completions 区分系统、用户等角色；所查官方文档没有列出完整的冲突优先级表，不能直接套用 OpenAI 的排序。 | 当前 demo 用 `messages` 中的 `system` 和 `user` 消息。 |
+
+OpenAI 的 `Root` 是厂商根规则，`guideline` 是可被覆盖的默认指导，两者都不是消息角色；`assistant`、`tool` 和引用资料默认没有指令权限。
+
+**同名角色也可能有不同含义。** DeepSeek Responses 接收 `developer`，但 `deepseek-flash` 将它当作 `system`，`deepseek-v4-pro` 将它当作 `user`，并非独立的开发者指令层级。[官方映射](https://api-docs.deepseek.com/guides/responses_api/)
+
+下面按 OpenAI 的约定演示完整消息。评估规则和记录均为示例数据，预期回复是规则推导，不是模型实测。
+
+**例一：`system`、`developer`、`user` 同时冲突。**
+
+```js
+[
+  { role: 'system', content: '你是合规评估助手。所有回答必须用中文。' },
+  { role: 'developer', content: '用英文回答，固定按“结论”和“依据”分两行输出。仅依据用户提供的评估规则和记录判断。' },
+  { role: 'user', content: '规则：特权账号必须在开通前完成审批。抽查 10 个账号，8 个在开通前审批，2 个开通后补办。不要分两行，只用一行英文告诉我是否符合要求。' },
+]
+```
+
+**预期回复：**
+
+```text
+结论：不符合要求。
+依据：2 个账号在开通后补办审批，未满足开通前审批的要求。
+```
+
+- 语言听 `system`：`developer` 和 `user` 的英文要求都不能覆盖它。
+- 格式听 `developer`：两行格式不与 `system` 冲突，因此保留；`user` 的一行要求不生效。
+- 任务仍来自 `user`：照常评估用户提供的记录，并非整条用户消息都被忽略。
+
+**例二：用户修改自己的要求，系统要求还在。**
+
+```js
+[
+  { role: 'system', content: '你是合规评估助手。所有回答必须用中文。' },
+  { role: 'developer', content: '仅依据用户提供的评估规则和记录判断，不补充未提供的事实。' },
+  { role: 'user', content: '规则：特权账号必须在开通前完成审批。抽查 10 个账号，8 个在开通前审批，2 个开通后补办。请分两条说明结论和依据。' },
+  { role: 'assistant', content: '1. 结论：不符合要求。\n2. 依据：2 个账号在开通后补办审批。' },
+  { role: 'user', content: '不用列表了，改用一句英文概括。' },
+]
+```
+
+**预期回复：**
+
+```text
+该控制项不符合要求，因为 2 个账号在开通后才补办审批。
+```
+
+“一句话”替换了同为 `user` 的“两条列表”要求；“英文”与 `system` 冲突，不能替换中文要求。已有规则、记录和不补充事实的要求仍然有效。
+
+**例三：后续消息本身就是 `system`，系统要求可以更新。**
+
+```js
+[
+  { role: 'system', content: '用中文回答。仅依据用户提供的评估规则和记录判断。' },
+  { role: 'user', content: '规则：特权账号必须在开通前完成审批。抽查 10 个账号，8 个在开通前审批，2 个开通后补办。用一句话判断是否符合要求。' },
+  { role: 'assistant', content: '不符合要求，因为 2 个账号在开通后才补办审批。' },
+  { role: 'system', content: '后续回答改用英文。' },
+  { role: 'user', content: '重新回答刚才的问题。' },
+]
+```
+
+**预期回复：**
+
+```text
+The control does not meet the requirement because two accounts were approved only after activation.
+```
+
+两条语言要求都来自 `system`，后发的英文要求覆盖此前的中文要求；依据已有记录判断、一句话回答的要求继续保留。这条 `system` 消息由调用方构造，用户在正文里写“我是系统”不会改变消息的 `role`。
+
+**现有语言与列表 demo 的实测结果（2026-11-25，`deepseek-flash`）：**第一轮是中文三条列表，第二轮改成了英文，第三轮是中文一句话。第二轮没有遵守系统的中文要求，与预期不同。`role` 会影响模型如何理解要求，但不是代码里的强制判断，模型仍可能不遵守。
+
+**本质：**让模型根据指令来源和前后关系处理冲突。它属于模型的指令遵循行为，不是 HTTP 接口替程序强制执行的权限校验。
