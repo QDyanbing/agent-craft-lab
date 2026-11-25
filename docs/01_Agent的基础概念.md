@@ -236,7 +236,7 @@ The control does not meet the requirement because two accounts were approved onl
 
 **Q：有提示缓存，追问时可以不带工具相关的上下文吗？**
 
-**A：不能因为缓存而省略。** 新追加的 `user` 消息只写追问即可，但整次请求仍需携带本轮可用的工具定义，以及需要继续参考的历史工具调用和结果。[工具调用示例](https://api-docs.deepseek.com/guides/tool_calls/)
+**A：当前 DeepSeek Chat Completions 调用不能因为缓存而省略。** 新追加的 `user` 消息只写追问即可，但整次请求仍需携带本轮可用的工具定义，以及需要继续参考的历史工具调用和结果。[工具调用示例](https://api-docs.deepseek.com/guides/tool_calls/)
 
 ```js
 const body = {
@@ -252,3 +252,9 @@ const body = {
 本轮不再提供工具时可以省略 `tools`，这是调整可用工具，和缓存无关。
 
 - **缓存是缓存，上下文是上下文。** 模型本身不维护跨请求的对话记忆，对话状态由应用或服务端管理；提示缓存只复用计算，不能替代本轮所需的上下文。
+
+**Q：工程侧能通过模型缓存缩减上下文吗？**
+
+**A：不能。** 缓存只减少重复计算，命中的内容仍占用上下文窗口。工程侧设置缓存策略，也不会改变这一点。
+
+**缩减上下文要靠工程侧筛选或压缩内容，缓存本身做不到。**
