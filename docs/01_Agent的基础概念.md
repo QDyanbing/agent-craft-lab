@@ -368,3 +368,48 @@ M2 与 M3 是一次已完成的工具调用，一起被摘要替换；原始调�
 
 1. **消息是消息：**工程侧保存的完整交互记录，用于前端展示、后端回查，不会因为压缩而改写。
 2. **上下文是上下文：**发给模型的内容会被改写为“摘要 + 未压缩的消息”。若旧历史全部压缩、触发压缩的本次消息保留原文，就是“摘要 + 本次消息”；系统指令和工具定义仍需保留。
+
+**Q：工程侧如何设计表结构？上下文从消息组织，还是单独存表？Codex、Claude Code 怎么做？**
+
+**A：消息保存完整记录，压缩状态单独保存，上下文在请求时组装。** 不必再把每次请求的完整上下文复制到一张表。
+
+**表结构：**以下是顺序追加对话的最小设计，适用于 SQLite、MySQL 等关系型数据库；是建议方案，不是厂商的原始表结构。
+
+| 表 | 关键字段 | 职责 |
+| --- | --- | --- |
+| `sessions` 会话表 | `id`、`title`、`current_compaction_id` | 管理会话，指向当前生效的压缩记录；未压缩时为空。 |
+| `messages` 消息表 | `id`、`session_id`、`seq`、`payload` | 按会话保存原始用户消息、模型回复、工具调用和结果。 |
+| `compactions` 压缩表 | `id`、`session_id`、`covered_seq`、`summary` | 保存摘要，以及它累计覆盖到哪条原始消息。 |
+
+`session_id` 关联会话；`seq` 是会话内的递增序号，设置唯一约束 `(session_id, seq)`。`covered_seq = 4` 表示摘要覆盖第 1～4 条消息。各表可记录创建时间，但消息顺序以 `seq` 为准。
+
+`payload` 存结构化 JSON，保留 `role`、`content`、工具调用参数及调用编号等协议字段，不能只存聊天气泡中的文字。SQLite 可用 TEXT 保存 JSON。
+
+**数据怎样流转：**
+
+1. **收发消息：**用户消息、模型回复和工具结果写入 `messages`；前端从这里读取聊天记录。
+2. **调用模型：**读取当前摘要，再取 `seq > covered_seq` 的消息，组装“系统指令 + 摘要 + 未压缩消息”。没有摘要时使用原始消息；工具定义、当前业务资料另外按需加入请求。
+3. **完成压缩：**保存新摘要和覆盖序号，并在同一事务中更新 `current_compaction_id`。原始消息不改；后续请求使用新摘要。
+4. **刷新恢复：**前端读取完整消息记录，后端按第 2 步重建上下文，不需要重新生成摘要。
+
+**沿用前面的账号评估案例：**
+
+```text
+messages：M1、M2、M3、M4、M5，seq 分别为 1～5
+compactions：C1，summary = 摘要 S，covered_seq = 4
+sessions：current_compaction_id = C1
+
+前端展示：M1～M5
+模型收到：系统指令 + S + M5，另附本次工具定义
+```
+
+如果后来需要压缩到 M8，用“当前摘要 S + M5～M8”生成新摘要，保存为 C2、`covered_seq = 8`，再将当前指针切到 C2。新摘要累计代表 M1～M8，下一次不再同时携带 S。
+
+**Codex、Claude Code 的实际做法（2026-11-26 核对）：**
+
+| Agent | 存储与恢复 |
+| --- | --- |
+| Codex 开源实现 | JSONL 日志保存消息及压缩事件；SQLite 的 `threads` 表保存会话元信息和 `rollout_path` 日志路径。[日志实现](https://github.com/openai/codex/blob/af71942309704997f4bdc86c020717646423c080/codex-rs/rollout/src/recorder.rs#L74-L87)、[表结构](https://github.com/openai/codex/blob/af71942309704997f4bdc86c020717646423c080/codex-rs/state/migrations/0001_threads.sql)。压缩记录可保存 `replacement_history`，恢复时以可独立恢复的最新压缩记录及后续日志重建模型上下文。[恢复源码](https://github.com/openai/codex/blob/af71942309704997f4bdc86c020717646423c080/codex-rs/rollout/src/model_context.rs#L1-L23) |
+| Claude Code CLI | 会话存于 `~/.claude/projects/<project>/<session-id>.jsonl`；恢复时使用最近一次压缩摘要、该次保留的未压缩消息和之后的新消息。官方说明其日志格式属于内部实现，会随版本变化，不是稳定的数据库表结构。[存储与恢复说明](https://code.claude.com/docs/en/sessions) |
+
+**总结：消息是原始记录，上下文是本次请求的组装结果；需要持久化的是消息和压缩状态。** 两者可以分表，也可以像上述 Agent 一样记在同一份日志中，再由代码区分和重建。物理上是否分表，不决定逻辑上是否分开。
