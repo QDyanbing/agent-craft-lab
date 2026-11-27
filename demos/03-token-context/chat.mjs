@@ -7,7 +7,7 @@ if (!apiKey) {
   process.exit(1);
 }
 
-export async function chat(step, messages, maxTokens) {
+export async function chat(step, messages, maxTokens, responseFormat) {
   const body = JSON.stringify({
     model: 'deepseek-flash',
     thinking: { type: 'disabled' },
@@ -16,6 +16,7 @@ export async function chat(step, messages, maxTokens) {
     // 在 SSE 响应中获取服务端统计，不按字符数或流式片段数估算 Token。
     stream_options: { include_usage: true },
     max_tokens: maxTokens,
+    response_format: responseFormat,
   }, null, 2);
 
   console.log(`\n${step}\n${body}`);
