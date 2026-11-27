@@ -602,3 +602,16 @@ data: [DONE]
 **回复结束后，拼接的 `content` 一定是完整 JSON 吗？** 成功生成并完整接收时是，但“流结束”本身不保证成功。输出达到上限可能截断 JSON；DeepSeek 即使返回 `finish_reason: 'stop'`，也可能只有空白。因此仍需检查结束原因、空内容，并处理 `JSON.parse()` 失败。[JSON 模式说明](https://api-docs.deepseek.com/guides/json_mode/)
 
 **总结：JSON 模式约束返回格式，正常情况下直接返回 JSON，省去从解释文字或 Markdown 代码块中截取 JSON 的步骤；但截断、空响应等情况仍可能导致解析失败，不保证每次都拿到可用的 JSON。**
+
+**Q2：哪些模型支持 JSON 返回？**
+
+**A：下面这些模型都支持通过官方 API 约束 JSON 输出，但约束能力不同。** 2026-11-27 核对，列举前文涉及的四家常见模型。
+
+| 厂商 | 模型举例 | 支持的约束 |
+| --- | --- | --- |
+| DeepSeek | [deepseek-flash、deepseek-v4-pro](https://api-docs.deepseek.com/quick_start/pricing/) | JSON 模式；当前 Chat Completions 的 `response_format` 提供 `json_object`，没有 `json_schema`。[接口说明](https://api-docs.deepseek.com/api/create-chat-completion/) |
+| OpenAI | [GPT-6.2 Astra](https://developers.openai.com/api/docs/models/gpt-6.2-astra)、[GPT-6.2 Sol](https://developers.openai.com/api/docs/models/gpt-6.2-sol) | 支持按 JSON Schema 生成 JSON；官方接口也提供 JSON 模式。[接口说明](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| Anthropic | [Claude Fable 5.2、Opus 5.5、Sonnet 5.5、Haiku 5.5](https://platform.claude.com/docs/en/models/overview) | Messages API 支持按 JSON Schema 生成 JSON，通过 `output_config.format` 设置。[接口说明](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) |
+| Google | Gemini 4 Hydrogen | 支持按 JSON Schema 生成 JSON；Interactions API 通过 `response_format` 设置 JSON MIME 类型和 Schema。[接口说明](https://aistudio.google.com/docs/structured-output) |
+
+**总结：这些模型都支持 JSON 返回；JSON 模式约束格式，JSON Schema 还能约束字段、类型和取值。接入时要核对具体模型和接口，参数不能跨厂商直接照搬。**
