@@ -545,3 +545,33 @@ M3 用户：先说明风险，demo 以后再说。
 历史记录和摘要也可以用于长期记忆，前提是工程侧提供跨会话保存与调用机制。存储可以用普通数据库或文件，不要求向量数据库，也没有把内容训练进模型参数。
 
 **总结：是否属于长期记忆，看它如何被复用；记忆只有进入本次上下文，模型才能在这次调用中使用。**
+
+## 结构化输出（Structured Output）是什么
+
+结构化输出是让模型按约定的字段、类型和取值返回数据，方便程序读取、展示或继续执行。
+
+例如评估结果约定为：`status` 只能是 `pass / fail / unknown`，`evidence` 必须是字符串数组，`reason` 必须是字符串。
+
+```json
+{
+  "status": "unknown",
+  "evidence": [],
+  "reason": "尚未提供逐账号停用日志，无法确认是否全部当日停用。"
+}
+```
+
+**三个层次要分清：**
+
+| 方式 | 作用 |
+| --- | --- |
+| 提示词要求“返回 JSON” | 告诉模型期望格式，仍可能返回说明文字或不合法的 JSON。 |
+| JSON 模式 | 通过接口约束 JSON 格式，不保证字段、类型符合业务约定；仍需处理空白或截断输出。 |
+| 按 JSON Schema 约束生成 | 在接口支持的规则范围内，约束完整、非拒绝的输出符合指定字段、类型、必填项和枚举值。[接口示例](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) |
+
+JSON Schema 就是描述上述结构约定的规则。`JSON.parse()` 只解析 JSON；即使 `evidence` 错写成字符串 `"D-02"`，也能解析成功，仍需校验它是否为数组。
+
+当前 DeepSeek Chat Completions 用 `response_format: { type: 'json_object' }` 开启 JSON 模式。demo 将期望结构写进提示词，再由本地代码校验字段；这不等于服务端按 Schema 约束生成。[DeepSeek 参数说明](https://api-docs.deepseek.com/api/create-chat-completion/)
+
+SSE 可以照常逐段返回；本例在流结束后拼出完整文本，再解析和校验。单个 `content` 片段不一定是完整 JSON。
+
+**本质：约束输出的结构，方便程序消费；结构正确不代表事实和判断正确。**
