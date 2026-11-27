@@ -615,3 +615,49 @@ data: [DONE]
 | Google | Gemini 4 Hydrogen | 支持按 JSON Schema 生成 JSON；Interactions API 通过 `response_format` 设置 JSON MIME 类型和 Schema。[接口说明](https://aistudio.google.com/docs/structured-output) |
 
 **总结：这些模型都支持 JSON 返回；JSON 模式约束格式，JSON Schema 还能约束字段、类型和取值。接入时要核对具体模型和接口，参数不能跨厂商直接照搬。**
+
+**Q3：解析失败、数据层级或类型错误，怎么解决？**
+
+**A：工程侧只能按预先定义的规则检查；错误来自解析器或校验器，不是程序自动理解了正确答案。** 后端收到模型输出就能检查，不需要先展示到页面。没有结构校验规则，就无法自动判断层级是否符合预期。
+
+处理顺序：`接收完整输出 → JSON.parse → 结构校验 → 通过则使用，失败则按原因处理`。
+
+| 问题 | 怎么发现 | 怎么处理 |
+| --- | --- | --- |
+| 输出截断或为空 | 检查结束原因和正文 | 截断时，在模型限额内增加输出额度，或减少要求返回的内容，再重新生成；空响应可重试。不要直接给半段 JSON 补括号。[接口说明](https://api-docs.deepseek.com/guides/json_mode/) |
+| JSON 语法错误 | `JSON.parse(content)` 抛异常 | 开启接口支持的 JSON 约束，把错误输出和解析错误反馈给模型，要求重写完整 JSON。 |
+| 层级、字段或类型错误 | JSON 能解析，但结构校验失败 | 用 Schema 明确根节点、嵌套关系、必填字段、类型和枚举，把具体不符项反馈给模型。 |
+
+结构校验由代码执行，例如用 [Ajv](https://ajv.js.org/api.html#validation-errors) 编译 JSON Schema，再校验解析后的对象、读取 `validate.errors`。接口支持时，也把 Schema 交给服务端约束生成。[服务端约束](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
+
+**例：**工程侧预先定义 Schema：顶层是对象，必须有 `status`、`evidence`、`reason`，不允许其他字段；其中 `evidence` 是字符串数组。假设模型返回：
+
+```json
+{"result":{"status":"fail","evidence":"D-02","reason":"存在次日停用账号。"}}
+```
+
+这段 JSON 能解析。用 Ajv 8、`allErrors: true` 实际校验后，得到以下错误（只保留关键字段，空路径表示根节点）：
+
+```json
+[
+  {"instancePath":"","keyword":"required","params":{"missingProperty":"status"}},
+  {"instancePath":"","keyword":"required","params":{"missingProperty":"evidence"}},
+  {"instancePath":"","keyword":"required","params":{"missingProperty":"reason"}},
+  {"instancePath":"","keyword":"additionalProperties","params":{"additionalProperty":"result"}}
+]
+```
+
+校验器只报告“顶层缺字段、多了 `result`”，不会自动推导“拆掉 `result`、把 `D-02` 改成数组”。如果字段已在正确层级，但 `evidence` 仍是字符串，才会报 `/evidence` 必须是数组。
+
+**重试用固定模板，不需要人工逐次写精准提示词。** 保留原请求的任务和资料，用代码把 Schema、原始输出、实际校验错误填入模板：
+
+```text
+结构约定：{{schema}}
+上次输出：{{content}}
+校验错误：{{errors}}
+请依据原任务和资料重新生成符合结构约定的完整 JSON，不添加解释，不编造缺失事实。
+```
+
+JSON 解析失败时，`errors` 填解析器的异常信息；结构校验失败时，填校验器的错误列表。新结果仍走同一套检查，例如最多额外重试 2 次，仍失败就返回失败。这个次数是工程策略，没有统一标准。
+
+**总结：校验输出 → 将错误反馈给模型 → 模型重新输出 → 再校验。通过则使用，超过重试上限仍失败就返回失败。**
