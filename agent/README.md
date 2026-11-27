@@ -14,7 +14,7 @@
 
 ## 目录划分
 
-以下为规划。当前工程仅有本文。
+以下为目标结构。首个已实现的模块是上下文预算计算器。
 
 ```text
 agent/
@@ -59,6 +59,22 @@ agent/
 | 能否开始下一轮 | 每次准备发起模型调用前，检查已用步数和剩余预算。已用步数达到上限时停止，并返回已有证据与未验证项。 | `runtime/` |
 | 证据覆盖了多少验收项 | 已核验覆盖率 =（有证据支持通过的项数 + 有证据支持失败的项数）÷ 适用项总数。每个验收项只计一次；分母为零时返回“不适用”。 | `verification/` 提供逐项状态，`scoring/` 计算 |
 | 是否达到验收门槛 | 例如任务要求三项必选行为全部通过，前两项通过、刷新待验证时，覆盖率为 2/3，总体待验证。补测刷新且复现丢失后，覆盖率为 3/3，总体失败。有已证实的必选项失败即判失败。 | `scoring/` |
+
+## 已实现：上下文预算计算器
+
+只对外提供 `shouldCompact(previousTokens, appendedMessages)`。函数内部调用 `estimateAddedTokens` 估算增量，加上上一轮保留的 token 数后判断是否达到压缩阈值。首轮或替换历史时传 0 和完整的新上下文。[预算实现](src/context/budget.ts) · [实际调用](../demos/07-context-compaction/index.mjs)
+
+```ts
+const needsCompaction = shouldCompact(lastResponse.usage.total_tokens, [
+  { role: 'user', content: '再检查一下刷新后能否保留数据。' },
+]);
+```
+
+Agent 使用 `deepseek-flash` 的 1,048,576 token 窗口，项目固定预留 1,024 个输出 token 和 256 个安全余量，可用输入为 1,047,296。达到可用输入的 80%（837,837 tokens）时建议压缩。百分比触发参考 Claude Code 的配置方式，分母及 80% 由本项目选定。Codex 也支持按绝对 token 数配置压缩触发点。[模型窗口来源](https://api-docs.deepseek.com/api/list-models/) · [Claude Code 环境变量](https://code.claude.com/docs/en/env-vars) · [Codex 配置参考](https://developers.openai.com/codex/config-reference)
+
+公开函数返回 `boolean`。旧上下文沿用实测用量。新增部分逐条取消息正文的 UTF-8 字节数，除以 4 向上取整后累加。下一轮使用模型返回的实际用量更新基数。[Codex 文本估算源码](https://github.com/openai/codex/blob/0c5ccd18abda96efaed9e94e26ffe22def5e28ed/codex-rs/utils/string/src/truncate.rs#L71-L74)
+
+从仓库根目录运行 `npm --prefix agent test` 可离线验证。已有压缩示例使用 `node demos/07-context-compaction/index.mjs` 启动，需要 Node.js 24 和 `AGENT_API_KEY`。传入 `--compact` 可用短对话观察摘要和审查过程。
 
 ## 首版如何验证
 
