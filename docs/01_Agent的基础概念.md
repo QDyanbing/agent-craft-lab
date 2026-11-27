@@ -575,3 +575,30 @@ JSON Schema 就是描述上述结构约定的规则。`JSON.parse()` 只解析 J
 SSE 可以照常逐段返回；本例在流结束后拼出完整文本，再解析和校验。单个 `content` 片段不一定是完整 JSON。
 
 **本质：约束输出的结构，方便程序消费；结构正确不代表事实和判断正确。**
+
+### QA
+
+**Q1：标记 JSON 输出后，从哪里开始是 JSON？**
+
+**A：`response_format: { type: 'json_object' }` 约束的是本次模型回复的整个正文，也就是 `content` 的内容。** 没有额外的“JSON 开始”标记，也不是先输出一段解释再输出 JSON。[接口说明](https://api-docs.deepseek.com/api/create-chat-completion/)
+
+以 SSE 返回为例，下面只保留相关字段，分段位置仅作示意：
+
+```text
+data: {"choices":[{"delta":{"content":"{\"status\":"}}]}
+
+data: {"choices":[{"delta":{"content":"\"unknown\",\"evidence\":[],\"reason\":\"缺少日志。\"}"}}]}
+
+data: [DONE]
+```
+
+这里有两层 JSON：
+
+1. **外层事件：**除结束标记外，事件的 `data` 本身就是接口返回的 JSON，普通文本模式也是如此。解析后取出 `choices[0].delta.content`。
+2. **模型正文：**把各段 `content` 拼成 `{"status":"unknown","evidence":[],"reason":"缺少日志。"}`，正常结束后再执行一次 `JSON.parse()`，得到业务对象。
+
+首个事件可能只含角色信息，正文也允许有前导空白；不能靠“第一个事件”或“第一个字符”判断 JSON 从哪开始。
+
+**回复结束后，拼接的 `content` 一定是完整 JSON 吗？** 成功生成并完整接收时是，但“流结束”本身不保证成功。输出达到上限可能截断 JSON；DeepSeek 即使返回 `finish_reason: 'stop'`，也可能只有空白。因此仍需检查结束原因、空内容，并处理 `JSON.parse()` 失败。[JSON 模式说明](https://api-docs.deepseek.com/guides/json_mode/)
+
+**总结：JSON 模式约束返回格式，正常情况下直接返回 JSON，省去从解释文字或 Markdown 代码块中截取 JSON 的步骤；但截断、空响应等情况仍可能导致解析失败，不保证每次都拿到可用的 JSON。**
